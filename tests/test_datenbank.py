@@ -199,6 +199,10 @@ class DatenbankTest(unittest.TestCase):
                 raise RuntimeError("Absturz")
         self.assertEqual(self.db.briefe(), [])
 
+    def test_verbindet_sich_neu(self):
+        self.db.conn.close()                   # z. B. Server neu gestartet oder PC im Standby
+        self.assertEqual(self.db.wert("SELECT 1"), 1)
+
     def test_zweite_verbindung(self):
         kopie = self.db.kopie()
         try:

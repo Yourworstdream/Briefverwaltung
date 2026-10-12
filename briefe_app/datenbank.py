@@ -190,8 +190,19 @@ class Datenbank:
 
     # ------------------------------------------------------------ Grundbausteine
 
+    def _lebendig(self) -> None:
+        """Prüft die Verbindung und baut sie bei Bedarf neu auf (z. B. nach dem Standby des PCs)."""
+        try:
+            self.conn.ping()
+        except pymysql.MySQLError:
+            if self._in_transaktion:
+                raise                          # mitten in einer Transaktion nie still neu verbinden
+            with contextlib.suppress(Exception):
+                self.conn.close()
+            self.conn = self._verbinden(self.name)
+
     def _cursor(self):
-        self.conn.ping(reconnect=True)
+        self._lebendig()
         return self.conn.cursor()
 
     def abfrage(self, sql: str, parameter=()) -> list:
@@ -224,7 +235,7 @@ class Datenbank:
         if self._in_transaktion:                 # verschachtelt: die äußere Transaktion zählt
             yield
             return
-        self.conn.ping(reconnect=True)
+        self._lebendig()
         self.conn.begin()
         self._in_transaktion = True
         try:
@@ -470,7 +481,8 @@ class Datenbank:
                     ergaenzen["dringlichkeit"] = max(anderer["dringlichkeit"], ergaenzen.get("dringlichkeit", 0))
                 if anderer["notizen"]:
                     notizen.append(anderer["notizen"])
-                start = self.wert("SELECT COALESCE(MAX(seite), 0) FROM foto WHERE brief_id = %s", (ziel_id,))
+                # int(): MariaDB liefert COALESCE(MAX(…), 0) als Dezimalzahl
+                start = int(self.wert("SELECT COALESCE(MAX(seite), 0) FROM foto WHERE brief_id = %s", (ziel_id,)))
                 for nr, foto in enumerate(self.abfrage(
                         "SELECT id FROM foto WHERE brief_id = %s ORDER BY seite, id", (anderer_id,)), start=start + 1):
                     self.ausfuehren("UPDATE foto SET brief_id = %s, seite = %s WHERE id = %s", (ziel_id, nr, foto["id"]))
@@ -504,7 +516,7 @@ class Datenbank:
                      vorschau: bytes | None = None) -> int:
         """Speichert ein Foto. Bitte innerhalb von transaktion() aufrufen."""
         if seite is None:
-            seite = self.wert("SELECT COALESCE(MAX(seite), 0) + 1 FROM foto WHERE brief_id = %s", (brief_id,))
+            seite = int(self.wert("SELECT COALESCE(MAX(seite), 0) + 1 FROM foto WHERE brief_id = %s", (brief_id,)))
         if vorschau and len(vorschau) > self.teilgroesse:
             vorschau = None
         foto_id = self.ausfuehren(
