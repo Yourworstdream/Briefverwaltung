@@ -1,6 +1,7 @@
 name: Tests
 
-# Läuft bei jedem Push und Pull Request – einmal mit MySQL 8 und einmal mit MariaDB (wie in XAMPP).
+# Läuft bei jedem Push und Pull Request – mit MySQL 8 und mit MariaDB
+# (10.4 ist die Version aus XAMPP 8.x).
 on:
   push:
   pull_request:
@@ -15,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        datenbank: ["mysql:8.0", "mariadb:10.11"]
+        datenbank: ["mysql:8.0", "mariadb:10.4", "mariadb:10.11"]
     services:
       db:
         image: ${{ matrix.datenbank }}

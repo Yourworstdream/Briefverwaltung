@@ -1,6 +1,6 @@
 -- ============================================================================
 --  Briefverwaltung – Datenbankschema
---  Läuft mit MySQL 8.0+ und MariaDB 10.5+ (z. B. aus XAMPP).
+--  Läuft mit MySQL 8.0+ und MariaDB 10.4+ (z. B. aus XAMPP).
 --  Das Programm führt diese Datei beim Start selbst aus; alle Befehle sind so
 --  geschrieben, dass sie mehrfach laufen dürfen (IF NOT EXISTS / OR REPLACE).
 -- ============================================================================

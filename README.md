@@ -16,12 +16,32 @@ Ein Desktop-Programm (Python), das deine Briefe in einer **MySQL-Datenbank** ver
 
 ![Briefe](docs/briefe.png)
 
+## Schnellstart unter Windows mit XAMPP
+
+1. **MySQL starten:** XAMPP Control Panel öffnen und in der Zeile **MySQL** auf **Start** klicken. Das Feld wird grün und bei Port(s) steht `3306`. Apache brauchst du nicht.
+2. **Python installieren:** von [python.org](https://www.python.org/downloads/). Beim Installieren unten **„Add python.exe to PATH“** anhaken.
+3. **Programm herunterladen:** auf GitHub **Code → Download ZIP** und die ZIP-Datei entpacken, z. B. nach `C:\Briefverwaltung`.
+4. **Pakete installieren:** im entpackten Ordner oben in die Adresszeile `cmd` tippen und Enter drücken, dann:
+
+   ```bat
+   py -m pip install -r requirements.txt
+   ```
+
+5. **Starten:** Doppelklick auf **`Briefverwaltung starten.pyw`**. Die Voreinstellungen (Server `localhost`, Port 3306, Benutzer `root`, kein Passwort) passen genau zu XAMPP. Das Programm legt die Datenbank `briefverwaltung` beim ersten Start selbst an.
+6. **Stick einstecken:** Die Fotos müssen im Ordner `Briefe` direkt auf dem Stick liegen. Wenige Sekunden nach dem Einstecken erscheint unten rechts die Meldung „USB-Import“.
+
+Damit MySQL nicht jedes Mal von Hand gestartet werden muss: im XAMPP Control Panel auf **Config** klicken und unter *Autostart of modules* **MySQL** anhaken.
+
+Startet MySQL in XAMPP nicht, ist meistens Port 3306 schon belegt, z. B. durch eine zweite MySQL-Installation. Beende diese, etwa den Dienst „MySQL80“ unter *Windows → Dienste*, und klicke dann erneut auf **Start**.
+
+Die Datenbank kannst du dir auch in XAMPP ansehen: bei Apache und MySQL auf **Start** klicken, dann bei MySQL auf **Admin**. Dort öffnet sich phpMyAdmin mit der Datenbank `briefverwaltung`.
+
 ## Installation
 
 Du brauchst:
 
 1. **Python 3.8 oder neuer** von [python.org](https://www.python.org/downloads/). Unter Windows bei der Installation „Add Python to PATH“ anhaken.
-2. **MySQL 8** oder **MariaDB 10.5+**, die einfachste Möglichkeit unter Windows ist [XAMPP](https://www.apachefriends.org/de/) (MariaDB).
+2. **MySQL 8** oder **MariaDB 10.4+**, die einfachste Möglichkeit unter Windows ist [XAMPP](https://www.apachefriends.org/de/) (MariaDB).
 3. Die Python-Pakete:
 
    ```bash
@@ -46,7 +66,7 @@ Die Datenbank `briefverwaltung` und alle Tabellen legt das Programm beim ersten 
 python briefverwaltung.py
 ```
 
-Unter Windows geht auch ein Doppelklick auf **`Briefverwaltung starten.pyw`** (ohne schwarzes Konsolenfenster). Beim ersten Start fragt das Programm nach den Zugangsdaten zur Datenbank. Sie stehen danach in `~/.briefverwaltung/einstellungen.json` und lassen sich unter **Datei → Einstellungen** ändern.
+Unter Windows geht auch ein Doppelklick auf **`Briefverwaltung starten.pyw`** (ohne schwarzes Konsolenfenster). Klappt die Verbindung mit den Voreinstellungen nicht (`localhost`, Port 3306, Benutzer `root`, kein Passwort, wie bei XAMPP), fragt das Programm nach den Zugangsdaten. Sie stehen danach in `~/.briefverwaltung/einstellungen.json` und lassen sich unter **Datei → Einstellungen** ändern.
 
 ## Briefe vom Handy auf den Stick
 

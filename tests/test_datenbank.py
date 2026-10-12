@@ -1,5 +1,7 @@
 """Tests für die Datenbankschicht."""
 import datetime as dt
+import hashlib
+import os
 import unittest
 from decimal import Decimal
 
@@ -202,6 +204,29 @@ class DatenbankTest(unittest.TestCase):
     def test_verbindet_sich_neu(self):
         self.db.conn.close()                   # z. B. Server neu gestartet oder PC im Standby
         self.assertEqual(self.db.wert("SELECT 1"), 1)
+
+    def test_kleines_paketlimit_wie_bei_xampp(self):
+        """XAMPP erlaubt nur 1 MB pro Paket (max_allowed_packet = 1M) – Handyfotos sind größer."""
+        alt = int(self.db.wert("SELECT @@GLOBAL.max_allowed_packet"))
+        try:
+            self.db.ausfuehren("SET GLOBAL max_allowed_packet = 1048576")
+        except Exception:
+            self.skipTest("keine Rechte für SET GLOBAL")
+        try:
+            klein = self.db.kopie()                    # neue Verbindung bekommt den neuen Wert
+            try:
+                self.assertEqual(klein.max_paket, 1048576)
+                inhalt = os.urandom(3 * 1024 * 1024)    # so groß wie ein typisches Handyfoto
+                brief = klein.brief_neu("großes Foto")
+                with klein.transaktion():
+                    foto = klein.foto_anlegen(brief, inhalt, "gross.jpg", hashlib.sha256(inhalt).hexdigest(),
+                                              vorschau=os.urandom(60_000))
+                self.assertEqual(klein.foto_inhalt(foto), inhalt)
+                self.assertEqual(len(klein.fotos(brief)[0]["vorschau"]), 60_000)
+            finally:
+                klein.schliessen()
+        finally:
+            self.db.ausfuehren("SET GLOBAL max_allowed_packet = %s", (alt,))
 
     def test_zweite_verbindung(self):
         kopie = self.db.kopie()
