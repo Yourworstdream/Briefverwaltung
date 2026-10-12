@@ -1,0 +1,6 @@
+# Python-Pakete für die Briefverwaltung:  pip install -r requirements.txt
+PyMySQL>=1.0          # Verbindung zur MySQL-/MariaDB-Datenbank
+Pillow>=9.1           # Fotos anzeigen, drehen, Vorschaubilder
+
+# Optional: Fotos im HEIC-Format (iPhone) anzeigen
+# pillow-heif

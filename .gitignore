@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+
+# Echte Briefe gehören nicht ins Repository
+/Briefe/
+/briefe/
+einstellungen.json

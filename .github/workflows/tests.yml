@@ -1,0 +1,40 @@
+name: Tests
+
+# Läuft bei jedem Push und Pull Request – einmal mit MySQL 8 und einmal mit MariaDB (wie in XAMPP).
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        datenbank: ["mysql:8.0", "mariadb:10.11"]
+    services:
+      db:
+        image: ${{ matrix.datenbank }}
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MARIADB_ROOT_PASSWORD: test
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ptest || mariadb-admin ping -h 127.0.0.1 -ptest"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Tests (mit virtuellem Bildschirm für die Oberfläche)
+        run: xvfb-run -a python -m unittest discover -s tests -v
+        env:
+          BRIEFE_TEST_MYSQL: "127.0.0.1:3306:root:test"
