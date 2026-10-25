@@ -19,6 +19,8 @@ android {
         targetSdk = 35
         versionCode = laufnummer
         versionName = "1.0.$laufnummer"
+        // Nur Handy-Prozessoren (ARM) – Intel-x86 gibt es fast nur im Emulator. Spart rund 23 MB.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     signingConfigs {
