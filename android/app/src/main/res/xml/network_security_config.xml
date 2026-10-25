@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Der PC im Heimnetz hat kein HTTPS-Zertifikat: unverschlüsseltes http im eigenen WLAN erlauben. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
