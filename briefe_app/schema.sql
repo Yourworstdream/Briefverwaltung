@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS brief (
     betrag             DECIMAL(12, 2) NULL,
     aktenzeichen       VARCHAR(100) NULL,
     notizen            TEXT         NULL,
+    volltext           MEDIUMTEXT   NULL,          -- vom Handy erkannter Text (für die Suche)
     erstellt_am        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     geaendert_am       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT chk_brief_dringlichkeit CHECK (dringlichkeit BETWEEN 1 AND 4),
@@ -174,11 +175,22 @@ CREATE TABLE IF NOT EXISTS import_protokoll (
     meldung    TEXT         NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Jede Sendung der Handy-App hat eine eindeutige Kennung. So entsteht kein doppelter Brief,
+-- wenn das Handy nach einem Verbindungsabbruch noch einmal sendet.
+CREATE TABLE IF NOT EXISTS handy_upload (
+    uuid          CHAR(36)     NOT NULL PRIMARY KEY,
+    brief_id      INT UNSIGNED NULL,
+    geraet        VARCHAR(100) NULL,
+    empfangen_am  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_upload_brief FOREIGN KEY (brief_id)
+        REFERENCES brief (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS schema_version (
     version  INT UNSIGNED NOT NULL PRIMARY KEY
 ) ENGINE=InnoDB;
 
-INSERT IGNORE INTO schema_version (version) VALUES (1);
+INSERT IGNORE INTO schema_version (version) VALUES (1), (2);
 
 -- ---------------------------------------------------------------------------
 --  Sichten (Views) – praktisch für eigene Abfragen im SQL-Fenster

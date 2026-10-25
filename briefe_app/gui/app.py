@@ -14,12 +14,13 @@ import traceback
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
-from .. import __version__, bilder, importer, konfig
+from .. import __version__, bilder, empfang, importer, konfig
 from ..datenbank import fehlertext
 from ..hilfen import Eingabefehler
 from ..usb import UsbWaechter
 from . import stil
 from .dialoge import AktivitaetDialog, EinstellungenDialog
+from .handy import HandyDialog
 from .tab_aktivitaeten import AktivitaetenTab
 from .tab_briefe import BriefeTab
 from .tab_sql import SqlTab
@@ -57,7 +58,11 @@ HILFE = """So funktioniert die Briefverwaltung
    (oder beim Absender / Anlass) mit den Knöpfen ☎ ● € ✎ eintragen.
    Eine „Wiedervorlage“ erinnert in der Übersicht an den nächsten Schritt.
 
-6. Im Reiter „SQL“ kannst du eigene MySQL-Abfragen ausprobieren.
+6. Handy-App: Datei → Handy verbinden … und den QR-Code mit der App
+   scannen. Gescannte Briefe kommen dann direkt hier an – schon mit
+   Absender, Frist, Betrag, IBAN usw., die das Handy erkannt hat.
+
+7. Im Reiter „SQL“ kannst du eigene MySQL-Abfragen ausprobieren.
 
 Datumsfelder verstehen: 08.10.2026 · 8.10. · heute · morgen · +14 · +2w · +1m
 
@@ -110,6 +115,9 @@ class App:
         self.usb_label = ttk.Label(leiste, text="", style="Status.TLabel", cursor="hand2")
         self.usb_label.pack(side="right", padx=12)
         self.usb_label.bind("<Button-1>", lambda e: self.usb_jetzt_pruefen())
+        self.handy_label = ttk.Label(leiste, text="", style="Status.TLabel", cursor="hand2")
+        self.handy_label.pack(side="right")
+        self.handy_label.bind("<Button-1>", lambda e: self.handy_verbinden())
 
         for taste, befehl in (("<Control-s>", self.speichern), ("<Control-n>", self.briefe.neuer_brief),
                               ("<Control-i>", self.ordner_importieren), ("<F1>", self.hilfe),
@@ -118,6 +126,8 @@ class App:
 
         self._db_anzeigen()
         self.usb_starten()
+        self.empfang = None
+        self.empfang_starten()
         self.notebook.select(self.uebersicht)
         self.root.after(300, self._nachrichten_abholen)
 
@@ -143,6 +153,7 @@ class App:
         datei = tk.Menu(leiste, tearoff=False)
         datei.add_command(label="Fotos aus Ordner importieren …", accelerator="Strg+I", command=self.ordner_importieren)
         datei.add_command(label="USB-Stick jetzt prüfen", command=self.usb_jetzt_pruefen)
+        datei.add_command(label="Handy verbinden …", command=self.handy_verbinden)
         datei.add_separator()
         datei.add_command(label="Einstellungen …", command=self.einstellungen)
         datei.add_separator()
@@ -411,10 +422,55 @@ class App:
                   "Neue Briefe ansehen" if ergebnis.neue_briefe else "",
                   (lambda: self.briefe_filter("neu")) if ergebnis.neue_briefe else None,
                   sekunden=15 if ergebnis.neue_briefe or ergebnis.fehler else 6)
+        elif art == "handy":
+            self._vom_handy(nachricht[1])
         elif art == "import_fehler":
             _, quelle, text = nachricht
             self._import_beendet()
             messagebox.showerror("Import fehlgeschlagen", f"{quelle}:\n\n{text}", parent=self.root)
+
+    # ------------------------------------------------------------ Handy-App
+
+    def empfang_starten(self) -> None:
+        """Startet (oder startet neu) den Empfang für die Handy-App."""
+        if self.empfang:
+            self.empfang.anhalten()
+            self.empfang = None
+        h = self.konfig["handy"]
+        if not h.get("token"):
+            h["token"] = empfang.token_erzeugen()
+            self.konfig_speichern()
+        if h.get("aktiv"):
+            self.empfang = empfang.Empfang(h["token"], self.db.kopie, port=h.get("port") or empfang.STANDARD_PORT,
+                                           bei_empfang=lambda erg: self.nachrichten.put(("handy", erg)))
+            self.empfang.starten()
+        self._handy_anzeigen()
+
+    def _handy_anzeigen(self) -> None:
+        if self.empfang and self.empfang.laeuft:
+            text = f"● Handy-Empfang bereit (Port {self.empfang.port})"
+        elif self.empfang:
+            text = "○ Handy-Empfang gestört – anklicken"
+        else:
+            text = "○ Handy-Empfang aus"
+        self.handy_label.configure(text=text)
+
+    def handy_verbinden(self) -> None:
+        HandyDialog(self)
+
+    def _vom_handy(self, ergebnis: dict) -> None:
+        if not ergebnis.get("neu"):
+            self.status(f"Handy: {ergebnis.get('meldung', '')}")
+            return
+        self.geaendert()
+        tab = self._aktueller_tab()
+        if tab is not None and (tab is not self.briefe or not self.briefe.formular.geaendert):
+            tab.neu_laden()
+        brief_id = ergebnis["brief_id"]
+        betreff = ergebnis.get("betreff") or "(ohne Betreff)"
+        self.status(f"Vom Handy empfangen: {betreff}", 12)
+        Toast(self.root, "Vom Handy empfangen", f"„{betreff}“\n{ergebnis.get('meldung', '')}",
+              "Ansehen", lambda: self.brief_zeigen(brief_id), sekunden=12)
 
     def _import_beendet(self):
         self._import_laeuft = False
@@ -432,6 +488,7 @@ class App:
         if not neu:
             return
         alt_mysql = dict(self.konfig["mysql"])
+        alt_handy = dict(self.konfig["handy"])
         self.konfig = neu
         self.konfig_speichern()
         if alt_mysql != neu["mysql"]:
@@ -444,6 +501,8 @@ class App:
         else:
             dialog.db.schliessen()
         self.usb_starten()
+        if alt_mysql != neu["mysql"] or alt_handy != neu["handy"]:
+            self.empfang_starten()
         self.status("Einstellungen gespeichert.")
 
     def hilfe(self) -> None:
@@ -472,6 +531,8 @@ class App:
             return
         if self.waechter:
             self.waechter.anhalten()
+        if self.empfang:
+            self.empfang.anhalten()
         self.sql.schliessen()
         self.db.schliessen()
         self.root.destroy()

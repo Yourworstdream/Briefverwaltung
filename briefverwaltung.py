@@ -66,6 +66,7 @@ def waechter() -> int:
 
     w = UsbWaechter(gefunden, ordnername=u["ordnername"], intervall=u["intervall"], zusatz_ordner=u.get("zusatz_ordner"))
     print(f"Briefverwaltung {__version__}: warte auf USB-Sticks mit dem Ordner „{u['ordnername']}“ …  (Strg+C = Ende)")
+    handy = _handy_empfang(daten)
     try:
         while True:
             w.pruefen()
@@ -73,8 +74,34 @@ def waechter() -> int:
     except KeyboardInterrupt:
         print("\nBeendet.")
     finally:
+        if handy:
+            handy.anhalten()
         db.schliessen()
     return 0
+
+
+def _handy_empfang(daten):
+    """Nimmt im Hintergrundmodus auch Briefe von der Handy-App an."""
+    from briefe_app import empfang
+
+    h = daten["handy"]
+    if not h.get("aktiv"):
+        return None
+    if not h.get("token"):
+        h["token"] = empfang.token_erzeugen()
+        konfig.speichern(daten)
+
+    def angekommen(ergebnis):
+        print(f"{time.strftime('%H:%M:%S')}  Handy: {ergebnis.get('meldung', '')}")
+
+    e = empfang.Empfang(h["token"], lambda: Datenbank.aus_konfig(daten, anlegen=False),
+                        port=h.get("port") or empfang.STANDARD_PORT, bei_empfang=angekommen)
+    if e.starten():
+        adressen = ", ".join(f"http://{ip}:{e.port}" for ip in empfang.lokale_adressen()) or f"Port {e.port}"
+        print(f"Handy-Empfang bereit: {adressen}  (Code {h['token']})")
+        return e
+    print(f"Handy-Empfang konnte nicht starten: {e.fehler}", file=sys.stderr)
+    return None
 
 
 def befehlszeile(argumente: list) -> int:

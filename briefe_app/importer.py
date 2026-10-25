@@ -117,9 +117,10 @@ def gruppen_sammeln(ordner) -> list:
     return gruppen
 
 
-def _foto_speichern(db, brief_id: int, pfad: Path, inhalt: bytes, sha: str, quelle: str) -> dict:
-    infos = bilder.bild_infos(inhalt) if bilder.ist_bild(pfad.name) else {}
-    db.foto_anlegen(brief_id, inhalt, pfad.name, sha, mime=bilder.mime_fuer(pfad.name),
+def foto_speichern(db, brief_id: int, dateiname: str, inhalt: bytes, sha: str, quelle: str) -> dict:
+    """Speichert ein Foto samt Vorschaubild. Bitte innerhalb von db.transaktion() aufrufen."""
+    infos = bilder.bild_infos(inhalt) if bilder.ist_bild(dateiname) else {}
+    db.foto_anlegen(brief_id, inhalt, dateiname, sha, mime=bilder.mime_fuer(dateiname),
                     breite=infos.get("breite"), hoehe=infos.get("hoehe"),
                     aufgenommen_am=infos.get("aufgenommen_am"), quelle=quelle, vorschau=infos.get("vorschau"))
     return infos
@@ -171,7 +172,7 @@ def importieren(db, ordner, quelle: str | None = None, fortschritt=None, protoko
                     brief_id = db.brief_neu(betreff=gruppe.betreff, status="neu")
                 erstes_datum = None
                 for pfad, inhalt, sha in neu:
-                    infos = _foto_speichern(db, brief_id, pfad, inhalt, sha, f"{quelle} › {pfad.relative_to(ordner)}")
+                    infos = foto_speichern(db, brief_id, pfad.name, inhalt, sha, f"{quelle} › {pfad.relative_to(ordner)}")
                     erstes_datum = erstes_datum or infos.get("aufgenommen_am")
                 if neuer_brief and erstes_datum:
                     # Fotografiert wird meist am Tag, an dem der Brief ankommt
@@ -204,6 +205,6 @@ def dateien_hinzufuegen(db, brief_id: int, pfade) -> Ergebnis:
             ergebnis.fehler.append(f"{pfad.name}: ist schon bei Brief Nr. {vorhanden['brief_id']} gespeichert")
             continue
         with db.transaktion():
-            _foto_speichern(db, brief_id, pfad, inhalt, sha, str(pfad))
+            foto_speichern(db, brief_id, pfad.name, inhalt, sha, str(pfad))
         ergebnis.neue_fotos += 1
     return ergebnis

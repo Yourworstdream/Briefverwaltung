@@ -491,6 +491,19 @@ class EinstellungenDialog(Dialog):
             self.zusatz = self.textfeld("Weitere Orte", "\n".join(u.get("zusatz_ordner") or []), 2)
             Tooltip(self.zusatz, "Optional, ein Pfad pro Zeile – z. B. ein Netzlaufwerk, das wie ein Stick\n"
                                  "behandelt wird. Darin wird ebenfalls nach dem Ordner gesucht.")
+        h = self.konfig["handy"]
+        self.handy_aktiv = tk.BooleanVar(value=h.get("aktiv", True))
+        self.handy_port = tk.StringVar(value=str(h.get("port") or 8765))
+        if not nur_verbindung:
+            ttk.Separator(self.inhalt).grid(row=self._zeile, column=0, columnspan=2, sticky="ew", pady=12)
+            self._zeile += 1
+            ttk.Label(self.inhalt, text="Handy-App", style="Untertitel.TLabel").grid(row=self._zeile, column=0,
+                                                                                    sticky="w")
+            self._zeile += 1
+            self.feld("", ttk.Checkbutton(self.inhalt, text="Briefe von der Handy-App empfangen (im eigenen WLAN)",
+                                          variable=self.handy_aktiv))
+            self.feld("Port", ttk.Entry(self.inhalt, textvariable=self.handy_port, width=8),
+                      "Nur ändern, wenn 8765 schon von einem anderen Programm benutzt wird")
         if fehlermeldung:
             self.fehler.configure(text=fehlermeldung)
 
@@ -511,6 +524,10 @@ class EinstellungenDialog(Dialog):
                  intervall=max(1.0, intervall))
         if self.zusatz is not None:
             u["zusatz_ordner"] = [z.strip() for z in text_aus(self.zusatz).splitlines() if z.strip()]
+        handy_port = self.handy_port.get().strip()
+        if not handy_port.isdigit() or not 1024 <= int(handy_port) <= 65535:
+            raise Eingabefehler("Der Port für die Handy-App ist eine Zahl zwischen 1024 und 65535, meistens 8765.")
+        self.konfig["handy"].update(aktiv=self.handy_aktiv.get(), port=int(handy_port))
         self.fehler.configure(text="Verbinde …")
         self.update_idletasks()
         from ..datenbank import DatenbankFehler

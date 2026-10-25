@@ -507,6 +507,9 @@ class BriefFormular(ttk.Frame):
 
         self.notizen = tk.Text(f, height=5, width=30, wrap="word", font=stil.schrift("normal"), padx=6, pady=4)
         self._feld("Notizen", self.notizen)
+        self.k_volltext = ttk.Button(f, text="Erkannten Text anzeigen …", command=self._volltext_zeigen)
+        self.k_volltext.grid(row=self._zeile, column=1, columnspan=2, sticky="w", pady=(0, 4))
+        self._zeile += 1
         self.notizen.bind("<<Modified>>", self._text_geaendert)
 
         reihe = ttk.Frame(f)
@@ -605,8 +608,28 @@ class BriefFormular(ttk.Frame):
         self._infos()
         self._frist_info()
         self._bezahlt_info()
+        self._volltext = self.app.db.volltext(b["id"]) if self.brief else ""
+        if self._volltext:
+            self.k_volltext.grid()
+        else:
+            self.k_volltext.grid_remove()
         self.aktivitaeten.laden()
         self.scroll.nach_oben()
+
+    def _volltext_zeigen(self):
+        """Der Text, den die Handy-App auf den Fotos erkannt hat – zum Lesen und Kopieren."""
+        fenster = tk.Toplevel(self)
+        fenster.title(f"Erkannter Text – Brief Nr. {self.brief['id']}" if self.brief else "Erkannter Text")
+        fenster.transient(self.winfo_toplevel())
+        text = tk.Text(fenster, width=90, height=34, wrap="word", padx=14, pady=12, font=stil.schrift("normal"))
+        leiste = ttk.Scrollbar(fenster, orient="vertical", command=text.yview)
+        text.configure(yscrollcommand=leiste.set)
+        text.insert("1.0", self._volltext)
+        text.configure(state="disabled")
+        ttk.Button(fenster, text="Schließen", command=fenster.destroy).pack(side="bottom", pady=8)
+        leiste.pack(side="right", fill="y")
+        text.pack(fill="both", expand=True)
+        fenster.bind("<Escape>", lambda e: fenster.destroy())
 
     def _listen_laden(self, absender_id, vorschlagen: bool = False):
         db = self.app.db

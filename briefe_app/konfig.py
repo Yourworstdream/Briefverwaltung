@@ -25,6 +25,11 @@ STANDARD = {
         "intervall": 2.0,
         "zusatz_ordner": [],          # weitere Orte, an denen nach dem Ordner gesucht wird
     },
+    "handy": {
+        "aktiv": True,                # Handy-App darf Briefe an diesen PC schicken
+        "port": 8765,
+        "token": "",                  # Zugangscode, wird beim ersten Start erzeugt
+    },
     "ansicht": {
         "gruppierung": "absender",
         "status_filter": "offen",

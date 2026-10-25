@@ -49,6 +49,8 @@ class OberflaecheTest(unittest.TestCase):
         try:
             if self.app.waechter:
                 self.app.waechter.anhalten()
+            if self.app.empfang:
+                self.app.empfang.anhalten()
             self.app.db.schliessen()
             self.root.destroy()
         finally:

@@ -28,7 +28,7 @@ ANSPRECHPARTNER_FELDER = ("absender_id", "anrede", "titel", "vorname", "nachname
 BANK_FELDER = ("absender_id", "kontoinhaber", "iban", "bic", "bank", "bemerkung")
 ANLASS_FELDER = ("name", "beschreibung", "status")
 BRIEF_FELDER = ("betreff", "absender_id", "ansprechpartner_id", "bankverbindung_id", "anlass_id", "briefdatum",
-                "eingangsdatum", "frist", "dringlichkeit", "status", "betrag", "aktenzeichen", "notizen")
+                "eingangsdatum", "frist", "dringlichkeit", "status", "betrag", "aktenzeichen", "notizen", "volltext")
 AKTIVITAET_FELDER = ("art", "zeitpunkt", "betreff", "notizen", "brief_id", "absender_id", "ansprechpartner_id",
                      "anlass_id", "richtung", "dauer_min", "ort", "telefonnummer", "betrag", "zahlungsart",
                      "bankverbindung_id", "wiedervorlage")
@@ -249,8 +249,23 @@ class Datenbank:
             self._in_transaktion = False
 
     def schema_anlegen(self) -> None:
+        self._migrieren()
         for befehl in sql_aufteilen(SCHEMA.read_text(encoding="utf-8")):
             self.ausfuehren(befehl)
+
+    def _spalte_fehlt(self, tabelle: str, spalte: str) -> bool:
+        tabelle_da = self.wert("""SELECT COUNT(*) FROM information_schema.tables
+                                  WHERE table_schema = DATABASE() AND table_name = %s""", (tabelle,))
+        if not tabelle_da:
+            return False                 # wird gleich von schema.sql vollständig angelegt
+        return not self.wert("""SELECT COUNT(*) FROM information_schema.columns
+                                WHERE table_schema = DATABASE() AND table_name = %s AND column_name = %s""",
+                             (tabelle, spalte))
+
+    def _migrieren(self) -> None:
+        """Bringt Datenbanken aus älteren Programmversionen auf den neuen Stand."""
+        if self._spalte_fehlt("brief", "volltext"):                     # Version 2: Text vom Handy
+            self.ausfuehren("ALTER TABLE brief ADD COLUMN volltext MEDIUMTEXT NULL AFTER notizen")
 
     def _speichern(self, tabelle: str, felder: tuple, daten: dict) -> int:
         werte = {f: _wert_fuer_db(f, daten[f]) for f in felder if f in daten}
@@ -413,8 +428,8 @@ class Datenbank:
             parameter.append(anlass_id)
         if suche:
             sql += (" AND (betreff LIKE %s OR absender LIKE %s OR anlass LIKE %s OR aktenzeichen LIKE %s"
-                    " OR notizen LIKE %s)")
-            parameter += [_like(suche)] * 5
+                    " OR notizen LIKE %s OR id IN (SELECT id FROM brief WHERE volltext LIKE %s))")
+            parameter += [_like(suche)] * 6
         sql += (" ORDER BY status = 'erledigt', dringlichkeit DESC, frist IS NULL, frist,"
                 " COALESCE(eingangsdatum, briefdatum) DESC, id DESC")
         return self.abfrage(sql, tuple(parameter))
@@ -428,6 +443,9 @@ class Datenbank:
         if "status" in daten and daten["status"] not in STATUS:
             raise Eingabefehler(f"Unbekannter Status „{daten['status']}“.")
         return self._speichern("brief", BRIEF_FELDER, daten)
+
+    def volltext(self, brief_id: int) -> str:
+        return self.wert("SELECT volltext FROM brief WHERE id = %s", (brief_id,)) or ""
 
     def brief_neu(self, betreff: str = "", **felder) -> int:
         felder.setdefault("eingangsdatum", dt.date.today())
@@ -466,7 +484,7 @@ class Datenbank:
             ziel = self.zeile("SELECT * FROM brief WHERE id = %s", (ziel_id,))
             if not ziel:
                 raise Eingabefehler("Der Ziel-Brief existiert nicht mehr.")
-            ergaenzen, notizen = {}, []
+            ergaenzen, notizen, volltexte = {}, [], []
             for anderer_id in andere_ids:
                 anderer = self.zeile("SELECT * FROM brief WHERE id = %s", (anderer_id,))
                 if not anderer:
@@ -481,6 +499,8 @@ class Datenbank:
                     ergaenzen["dringlichkeit"] = max(anderer["dringlichkeit"], ergaenzen.get("dringlichkeit", 0))
                 if anderer["notizen"]:
                     notizen.append(anderer["notizen"])
+                if anderer["volltext"]:
+                    volltexte.append(anderer["volltext"])
                 # int(): MariaDB liefert COALESCE(MAX(…), 0) als Dezimalzahl
                 start = int(self.wert("SELECT COALESCE(MAX(seite), 0) FROM foto WHERE brief_id = %s", (ziel_id,)))
                 for nr, foto in enumerate(self.abfrage(
@@ -488,6 +508,8 @@ class Datenbank:
                     self.ausfuehren("UPDATE foto SET brief_id = %s, seite = %s WHERE id = %s", (ziel_id, nr, foto["id"]))
                 self.ausfuehren("UPDATE aktivitaet SET brief_id = %s WHERE brief_id = %s", (ziel_id, anderer_id))
                 self.ausfuehren("DELETE FROM brief WHERE id = %s", (anderer_id,))
+            if volltexte:
+                ergaenzen["volltext"] = "\n\n".join(([ziel["volltext"]] if ziel["volltext"] else []) + volltexte)
             if notizen:                                      # Notizen der anderen Briefe anhängen
                 ergaenzen["notizen"] = "\n\n".join(([ziel["notizen"]] if ziel["notizen"] else []) + notizen)
             if ergaenzen:
