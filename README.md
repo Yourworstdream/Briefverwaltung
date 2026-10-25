@@ -13,6 +13,7 @@ Ein Desktop-Programm (Python), das deine Briefe in einer **MySQL-Datenbank** ver
 - **Telefonate, Treffen, Zahlungen & Co. dokumentieren:** E-Mails, verschickte Briefe und Notizen gehören auch dazu, jeweils zu einem Brief, Absender oder Anlass. Bei Telefonaten werden Nummer und Dauer gespeichert, bei Treffen der Ort, bei Zahlungen Betrag, Zahlungsart und Bankverbindung. Eine **Wiedervorlage** erinnert dich an den nächsten Schritt.
 - **Übersicht:** Neue, offene und dringende Briefe, überschrittene Fristen, noch zu zahlende Beträge, Wiedervorlagen und offene Briefe je Absender auf einen Blick.
 - **SQL-Fenster:** Eigene MySQL-Abfragen schreiben, mit Beispielen und dem Ergebnis als Tabelle. Ergebnisse lassen sich als CSV für Excel speichern.
+- **Handy-App für Android:** Briefe und Dokumente mit dem Handy scannen. Die App erkennt den Text, analysiert ihn (Absender, Frist, Betrag, IBAN, Ansprechpartner …) und schickt alles per WLAN an den PC. Einen USB-Stick brauchst du dann nicht mehr ([mehr dazu](#handy-app-android)).
 
 ![Briefe](docs/briefe.png)
 
@@ -67,6 +68,41 @@ python briefverwaltung.py
 ```
 
 Unter Windows geht auch ein Doppelklick auf **`Briefverwaltung starten.pyw`** (ohne schwarzes Konsolenfenster). Klappt die Verbindung mit den Voreinstellungen nicht (`localhost`, Port 3306, Benutzer `root`, kein Passwort, wie bei XAMPP), fragt das Programm nach den Zugangsdaten. Sie stehen danach in `~/.briefverwaltung/einstellungen.json` und lassen sich unter **Datei → Einstellungen** ändern.
+
+## Handy-App (Android)
+
+Mit der App scannst du Briefe und Dokumente direkt mit dem Handy. Die App liest den Text und füllt die Angaben schon aus. Danach schickt sie alles über das WLAN an die Briefverwaltung auf dem PC.
+
+**[⬇ App herunterladen (Briefverwaltung-Handy.apk)](https://github.com/Yourworstdream/Briefverwaltung/releases/download/handy-app/Briefverwaltung-Handy.apk)**
+
+### Installieren und verbinden
+
+1. Den Link oben **auf dem Handy** öffnen und die APK herunterladen.
+2. Antippen und installieren. Android fragt einmalig, ob der Browser Apps installieren darf. Das erlaubst du unter „Unbekannte Apps installieren“.
+3. Am PC in der Briefverwaltung **Datei → Handy verbinden …** öffnen.
+4. In der App oben rechts auf das Zahnrad tippen, dann **QR-Code am PC scannen** wählen.
+
+Handy und PC müssen im **selben WLAN** sein. Windows fragt beim ersten Start, ob Python im Netzwerk erreichbar sein darf. Wähle dort **Zugriff zulassen** für private Netzwerke.
+
+### So funktioniert's
+
+1. **Brief scannen:** Die Kamera findet die Ränder des Blattes, schneidet es gerade und kann mehrere Seiten aufnehmen. Alternativ nimmst du Fotos aus der Galerie oder teilst sie aus einer anderen App an die Briefverwaltung.
+2. **Analyse:** Die Texterkennung läuft direkt auf dem Handy, die Fotos werden dafür nirgendwo hochgeladen. Danach erkennt die App:
+   - die **Art** (Rechnung, Mahnung, Bescheid, Kündigung, Vertrag, Termin, Werbung …),
+   - den **Absender** mit Adresse, Telefon, E-Mail und deiner Kundennummer,
+   - den **Ansprechpartner** mit Durchwahl und E-Mail,
+   - **Betreff**, **Briefdatum** und **Frist**, auch aus Sätzen wie „innerhalb von 14 Tagen“ oder „innerhalb eines Monats“,
+   - den **Betrag**, die **IBAN** (mit Prüfziffer-Kontrolle) und die **BIC**,
+   - **Aktenzeichen** bzw. **Rechnungsnummer**,
+   - einen Vorschlag für die **Dringlichkeit**, mit Begründung (z. B. „Es ist eine Mahnung“ oder „Die Frist endet in 3 Tagen“).
+3. **Prüfen:** Alles steht in Eingabefeldern und lässt sich korrigieren.
+4. **An PC senden:** Am PC entsteht ein Brief mit allen Angaben. Absender, Ansprechpartner und Bankverbindung legt das Programm dabei an, falls es sie noch nicht gibt. Der erkannte Text wird mitgespeichert, damit du am PC auch nach Wörtern im Brief suchen kannst.
+
+Ist der PC aus oder nicht erreichbar, wartet der Brief auf dem Handy. Die App schickt ihn beim nächsten Öffnen von selbst. Nach dem Senden löscht sie die großen Fotos auf dem Handy, sie liegen ja jetzt in der Datenbank.
+
+Voraussetzungen: Android 8 oder neuer mit Google-Play-Diensten, die für Scanner und Texterkennung gebraucht werden. Die Daten gehen unverschlüsselt durchs eigene WLAN, geschützt nur durch den Zugangscode. Den Code kannst du am PC jederzeit neu erzeugen.
+
+Die App wird bei jeder Änderung im Ordner `android/` von GitHub Actions neu gebaut. Neue Versionen lassen sich einfach über die alte installieren. Dafür liegt ein fester Signaturschlüssel im Repository (`android/app/briefverwaltung.keystore`). Das ist für den eigenen Gebrauch in Ordnung. Wer die App weitergeben will, sollte einen eigenen Schlüssel anlegen und ihn über die Secrets `ANDROID_KEYSTORE_DATEI`, `ANDROID_KEYSTORE_PASSWORT`, `ANDROID_KEY_ALIAS` und `ANDROID_KEY_PASSWORT` einbinden.
 
 ## Briefe vom Handy auf den Stick
 
@@ -195,6 +231,13 @@ python -m unittest discover -s tests -v
 
 Für die Datenbank-Tests wird ein MySQL-Server gebraucht, angegeben über `BRIEFE_TEST_MYSQL=host:port:benutzer:passwort`. Ohne diese Angabe werden sie übersprungen. Jeder Lauf legt eine eigene Test-Datenbank an und löscht sie danach wieder. Auf GitHub laufen alle Tests bei jedem Push automatisch, mit MySQL 8 und mit MariaDB.
 
+Die Brief-Analyse der Handy-App hat eigene Tests. Sie laufen ohne Android SDK, nur mit Java 17:
+
+```bash
+cd android
+./gradlew -p analyse test
+```
+
 ## Aufbau
 
 ```
@@ -210,12 +253,16 @@ briefverwaltung/
 │   ├── bilder.py               Vorschaubilder, Aufnahmedatum, Drehung (Pillow)
 │   ├── hilfen.py               Datum, Beträge, IBAN, Auswahllisten
 │   ├── konfig.py               Einstellungen laden und speichern
+│   ├── empfang.py              Handy-Empfang: nimmt Briefe von der Android-App entgegen
 │   └── gui/                    Oberfläche (tkinter)
 │       ├── app.py              Hauptfenster, Menü, USB-Überwachung, Import im Hintergrund
 │       ├── tab_*.py            die Reiter
 │       ├── dialoge.py          Eingabefenster
 │       ├── bildanzeige.py      Fotoanzeige mit Zoom
 │       └── widgets.py, stil.py Bausteine und Aussehen
+├── android/                    Handy-App (Kotlin, Jetpack Compose, Google ML Kit)
+│   ├── app/                    Oberfläche, Scanner, Texterkennung, Senden an den PC
+│   └── analyse/                Brief-Analyse als reines Kotlin, mit eigenen Tests
 ├── sql/benutzer_anlegen.sql    eigenen MySQL-Benutzer anlegen
 └── tests/                      python -m unittest discover -s tests
 ```
