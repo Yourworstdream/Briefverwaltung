@@ -1,7 +1,6 @@
 package de.waslese.gemeinsam;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.webkit.JavascriptInterface;
@@ -43,15 +42,5 @@ public class Bruecke {
             // Partner-App fehlt, ist anders signiert oder antwortet nicht.
         }
         return "";
-    }
-
-    @JavascriptInterface
-    public boolean partnerDa() {
-        try {
-            context.getPackageManager().getPackageInfo(partnerPaket, 0);
-            return true;
-        } catch (PackageManager.NameNotFoundException e) {
-            return false;
-        }
     }
 }

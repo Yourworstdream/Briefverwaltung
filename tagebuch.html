@@ -254,8 +254,8 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
   // Gedanken, Zusammenfassung, Seiten und „fertig gelesen“ stehen hier.
   const JOURNAL_KEY = "was-lese-ich-heute.tagebuch.v1";
   // In der Android-App verbindet window.Bruecke dieses Tagebuch mit der App „Was lese ich heute?“.
+  // Die Android-Apps tauschen nur still Daten aus; Links auf die andere Seite gibt es nur im Browser.
   const BRIDGE = typeof window.Bruecke !== "undefined" ? window.Bruecke : null;
-  const SHELF_LINK = BRIDGE ? "wasleseichheute://regal" : "index.html";
 
   const $ = (s) => document.querySelector(s);
   const reduced = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -313,10 +313,6 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
       if (d && Array.isArray(d.books)) return { books: d.books, today: d.today || null, legacy: d.altesTagebuch || null };
     } catch (e) { /* nicht lesbar */ }
     return null;
-  }
-  function partnerMissing() {
-    if (!BRIDGE) return false;
-    try { return !BRIDGE.partnerDa(); } catch (e) { return true; }
   }
   // Die eigenen Einträge für „Was lese ich heute?“ bereitstellen (fertig gelesen, Seiten).
   function share() {
@@ -434,13 +430,10 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     const view = $("#view");
     view.replaceChildren();
     if (!shelf || !shelf.books.length) {
-      const missing = partnerMissing();
       view.append(el("section", null,
         el("h2", null, "Noch keine Bücher"),
-        el("p", { class: "empty" }, missing
-          ? "Installiere die App „Was lese ich heute?“ und trag dort deine Bücher ein. Sie erscheinen dann hier."
-          : "Trag deine Bücher zuerst in „Was lese ich heute?“ ein. Sie erscheinen dann hier."),
-        missing ? null : el("a", { class: "cross", href: SHELF_LINK }, "Zu „Was lese ich heute?“")));
+        el("p", { class: "empty" }, "Sobald du in „Was lese ich heute?“ Bücher einträgst, erscheinen sie hier."),
+        BRIDGE ? null : el("a", { class: "cross", href: "index.html" }, "Zu „Was lese ich heute?“")));
       return;
     }
     const today = todaysBook();
@@ -464,7 +457,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
       group("Am Lesen", reading, "Noch kein Buch angefangen. Tipp auf ein Buch, um Seiten oder Gedanken einzutragen."),
       group("Noch nicht angefangen", fresh, "Alle Bücher sind angefangen oder gelesen."),
       group("Gelesen", done, "Noch kein Buch fertig gelesen."),
-      el("a", { class: "cross", href: SHELF_LINK }, "Zum Regal: Was lese ich heute?"));
+      BRIDGE ? null : el("a", { class: "cross", href: "index.html" }, "Zum Regal: Was lese ich heute?"));
   }
 
   // ---------- Ein Buch ----------
@@ -689,7 +682,6 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     if (own !== null || !Object.keys(shelf.legacy.books).length) return;
     try {
       localStorage.setItem(JOURNAL_KEY, JSON.stringify(shelf.legacy));
-      setTimeout(() => notify("Deine bisherigen Einträge sind übernommen."), 400);
     } catch (e) { /* bleibt beim leeren Tagebuch */ }
   }
 

@@ -4,7 +4,7 @@
     <!-- Nur für die Schriften von Google Fonts; die Einträge bleiben auf dem Gerät. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Die Partner-App sichtbar machen, um ihre Bücher lesen zu können. -->
+    <!-- Die Partner-App sichtbar machen, um im Hintergrund ihre Bücher lesen zu können. -->
     <queries>
         <package android:name="de.waslese.heute" />
     </queries>
@@ -18,19 +18,11 @@
         <activity
             android:name=".TagebuchActivity"
             android:exported="true"
-            android:launchMode="singleTask"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <!-- „Was lese ich heute?“ öffnet ein Buch mit lesetagebuch://buch/<id> -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="lesetagebuch" />
             </intent-filter>
         </activity>
     </application>

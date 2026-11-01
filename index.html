@@ -486,14 +486,12 @@ section { min-width: 0; }
   // In der Android-App verbindet window.Bruecke diese App mit der App „Lesetagebuch“.
   const BRIDGE = typeof window.Bruecke !== "undefined" ? window.Bruecke : null;
   let J = {};
-  let partnerOk = true;
   function loadJournal() {
     try {
       const raw = BRIDGE ? BRIDGE.lesen() : localStorage.getItem(JOURNAL_KEY);
       const d = JSON.parse(raw || "null");
       J = d && d.books && typeof d.books === "object" ? d.books : {};
     } catch (e) { J = {}; }
-    if (BRIDGE) { try { partnerOk = BRIDGE.partnerDa(); } catch (e) { partnerOk = false; } }
   }
   function share() {
     // Bücher und Tagesbuch für das Lesetagebuch bereitstellen. Einträge aus der früheren
@@ -708,8 +706,9 @@ section { min-width: 0; }
       return;
     }
     const b = currentPick();
-    link.hidden = !(STANDALONE && b && partnerOk);
-    if (b) link.href = (BRIDGE ? "lesetagebuch://buch/" : "tagebuch.html#buch-") + encodeURIComponent(b.id);
+    // Im Browser sind beide Seiten verlinkt. Die Android-Apps tauschen nur still Daten aus, ohne Verweis aufeinander.
+    link.hidden = !(STANDALONE && !BRIDGE && b);
+    if (b) link.href = "tagebuch.html#buch-" + encodeURIComponent(b.id);
     const sig = b ? [b.id, b.name, b.genre, b.epoch].join("|") : "";
     if (b && sig === lastSig && !S.justDrawn && box.classList.contains("label") && !box.classList.contains("is-empty")) {
       renderNote();

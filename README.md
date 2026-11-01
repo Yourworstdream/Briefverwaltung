@@ -51,9 +51,10 @@ erreicht das über `window.Bruecke`:
 - „Was lese ich heute?“ teilt Bücher und Tagesbuch und liest vom Lesetagebuch, welche
   Bücher fertig sind und wie weit du bist.
 - Das Lesetagebuch teilt seine Einträge und liest von „Was lese ich heute?“ die Bücher.
-- Links springen in die andere App: `lesetagebuch://buch/<id>` und `wasleseichheute://regal`.
 
-Beide Apps funktionieren auch allein. Ohne Partner fehlt nur der Austausch.
+Der Austausch läuft unbemerkt im Hintergrund, jedes Mal wenn eine App geöffnet oder
+wieder nach vorne geholt wird. Die Apps verweisen nicht aufeinander und öffnen sich
+nicht gegenseitig. Jede funktioniert auch allein, ohne Partner fehlt nur der Austausch.
 
 GitHub baut beide bei jeder Änderung und legt sie unter
 **Releases → Handy-Apps (neueste Version)** als `Was-lese-ich-heute.apk` und

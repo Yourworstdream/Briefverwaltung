@@ -13,9 +13,4 @@ public class MainActivity extends WebActivity {
     protected String partnerPaket() {
         return "de.waslese.tagebuch";
     }
-
-    @Override
-    protected String partnerName() {
-        return "Lesetagebuch";
-    }
 }

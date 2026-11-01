@@ -10,11 +10,10 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Toast;
 
 /**
- * Zeigt die Seite der App aus assets/ an und verbindet sie über window.Bruecke mit der Partner-App.
- * Links wie lesetagebuch://buch/s3 öffnen die Partner-App direkt beim richtigen Buch.
+ * Zeigt die Seite der App aus assets/ an. Über window.Bruecke tauscht sie im Hintergrund
+ * Daten mit der Partner-App aus; sichtbar verbunden sind die beiden Apps nicht.
  */
 public abstract class WebActivity extends Activity {
 
@@ -27,9 +26,6 @@ public abstract class WebActivity extends Activity {
 
     /** Paketname der Partner-App. */
     protected abstract String partnerPaket();
-
-    /** Name der Partner-App für Hinweise. */
-    protected abstract String partnerName();
 
     @SuppressLint({"SetJavaScriptEnabled", "JavascriptInterface"})
     @Override
@@ -52,14 +48,14 @@ public abstract class WebActivity extends Activity {
                 if ("file".equals(ziel.getScheme())) {
                     return false;
                 }
-                try {
-                    startActivity(new Intent(Intent.ACTION_VIEW, ziel));
-                } catch (ActivityNotFoundException e) {
-                    String scheme = ziel.getScheme();
-                    boolean partner = scheme != null && !scheme.startsWith("http");
-                    Toast.makeText(WebActivity.this,
-                            partner ? "Installiere zuerst die App „" + partnerName() + "“." : "Kein Browser gefunden.",
-                            Toast.LENGTH_LONG).show();
+                // Fremde Webseiten im Browser öffnen, alles andere ignorieren.
+                String scheme = ziel.getScheme();
+                if ("http".equals(scheme) || "https".equals(scheme)) {
+                    try {
+                        startActivity(new Intent(Intent.ACTION_VIEW, ziel));
+                    } catch (ActivityNotFoundException ignoriert) {
+                        // Kein Browser installiert.
+                    }
                 }
                 return true;
             }
@@ -68,29 +64,7 @@ public abstract class WebActivity extends Activity {
         setContentView(web);
 
         if (zustand == null || web.restoreState(zustand) == null) {
-            web.loadUrl(adresse(getIntent()));
-        }
-    }
-
-    /** lesetagebuch://buch/<id> bzw. wasleseichheute://buch/<id> springt direkt zum Buch. */
-    private String adresse(Intent intent) {
-        String url = ASSETS + startPage();
-        Uri daten = intent != null ? intent.getData() : null;
-        if (daten != null && "buch".equals(daten.getHost())) {
-            String id = daten.getLastPathSegment();
-            if (id != null && !id.isEmpty()) {
-                url += "#buch-" + Uri.encode(id);
-            }
-        }
-        return url;
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
-        if (intent.getData() != null) {
-            web.loadUrl(adresse(intent));
+            web.loadUrl(ASSETS + startPage());
         }
     }
 

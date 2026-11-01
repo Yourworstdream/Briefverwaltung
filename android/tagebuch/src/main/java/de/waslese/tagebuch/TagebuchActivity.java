@@ -13,9 +13,4 @@ public class TagebuchActivity extends WebActivity {
     protected String partnerPaket() {
         return "de.waslese.heute";
     }
-
-    @Override
-    protected String partnerName() {
-        return "Was lese ich heute?";
-    }
 }
