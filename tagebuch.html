@@ -21,6 +21,14 @@
   --danger: #C0322B;
   --focus: #1F56D3;
   --ok: #0D7F57;
+  --grid: #C8D1E3;
+  --head: #1F56D3;
+  --head-dark: #1846B0;
+  --head-text: #FFFFFF;
+  --band: #EAF0FB;
+  --rowhead: #EDEFF4;
+  --select: #1E7145;
+  --grey-head: #5B6382;
   --font-display: "Bodoni Moda", "Bodoni 72", Didot, Georgia, serif;
   --font-ui: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
@@ -31,12 +39,14 @@
   :root:not([data-theme="light"]) {
     --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
     --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
+    --grid: #2E3758; --head: #2B5BD0; --head-dark: #2149AE; --head-text: #FFFFFF; --band: #1A2140; --rowhead: #1B2036; --select: #4CC38A; --grey-head: #46506F;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
   --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
+    --grid: #2E3758; --head: #2B5BD0; --head-dark: #2149AE; --head-text: #FFFFFF; --band: #1A2140; --rowhead: #1B2036; --select: #4CC38A; --grey-head: #46506F;
   color-scheme: dark;
 }
 
@@ -111,22 +121,64 @@ a.label { transition: transform 0.15s; }
 a.label:hover { transform: translateY(-2px); }
 
 /* Bücherlisten */
-.list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
-.jrow {
-  display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 4px 16px; align-items: center;
-  padding: 12px 4px; border-bottom: 1px solid var(--line);
-  color: inherit; text-decoration: none;
+/* Listen wie formatierte Excel-Tabellen: farbige Kopfzeile, Gitter, Zeilennummern, Streifen, Datenbalken */
+.sheet-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--grid); background: var(--card); }
+.sheet {
+  border-collapse: separate; border-spacing: 0; width: 100%;
+  font-size: 0.9rem; line-height: 1.35;
 }
-.jrow:hover { background: var(--hover); }
-.swatch { width: 12px; height: 38px; border-radius: 2px 2px 1px 1px; background: linear-gradient(90deg, rgb(0 0 0 / 0.25), rgb(255 255 255 / 0.15) 50%, rgb(0 0 0 / 0.25)), var(--c); }
-.jrow.done .swatch { opacity: 0.55; filter: saturate(0.3); }
-.r-main { min-width: 0; }
-.r-author { margin: 0 0 1px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted); overflow-wrap: anywhere; }
-.r-title { margin: 0; font-family: var(--font-display); font-style: italic; font-size: 1.1rem; line-height: 1.25; overflow-wrap: anywhere; }
-.r-side { display: grid; justify-items: end; gap: 5px; font-size: 0.8rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
-.r-side.done { color: var(--ok); font-weight: 600; }
-.mini { width: 72px; height: 5px; border-radius: 999px; background: var(--line); overflow: hidden; }
-.mini span { display: block; height: 100%; background: var(--c); }
+.sheet.wide { min-width: 520px; }
+.sheet tbody tr { --cell: var(--card); }
+.sheet tbody tr:nth-child(even) { --cell: var(--band); }
+.sheet th, .sheet td {
+  padding: 7px 10px; text-align: left; vertical-align: middle;
+  border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid);
+  background-color: var(--cell, var(--card));
+}
+.sheet tr > :last-child { border-right: 0; }
+.sheet tbody tr:last-child > * { border-bottom: 0; }
+.sheet thead th {
+  background-color: var(--head); color: var(--head-text); font-weight: 700; white-space: nowrap;
+  border-right-color: rgb(255 255 255 / 0.22); border-bottom: 0;
+}
+.sheet .rh {
+  position: sticky; left: 0; z-index: 1;
+  width: 40px; min-width: 40px; padding-inline: 4px; text-align: center;
+  font-weight: 500; font-size: 0.78rem; color: var(--muted); background-color: var(--rowhead);
+  font-variant-numeric: tabular-nums;
+}
+.sheet thead .rh { background-color: var(--head-dark); color: var(--head-text); z-index: 2; }
+.sheet .c-name { position: sticky; left: 40px; z-index: 1; min-width: 170px; max-width: 250px; overflow-wrap: anywhere; }
+.sheet thead .c-name { z-index: 2; }
+.sheet .num { text-align: right; font-variant-numeric: tabular-nums; }
+.sheet td.date { white-space: nowrap; color: var(--muted); }
+.sheet td.c-epoch { background-color: color-mix(in srgb, var(--c) 24%, var(--cell)); font-weight: 600; }
+.sheet td.c-status { white-space: nowrap; min-width: 120px; }
+.sheet td.c-status.done { background-color: color-mix(in srgb, var(--ok) 20%, var(--cell)); color: var(--ok); font-weight: 700; }
+.sheet td.c-status.databar {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--c) 42%, transparent) var(--p), transparent var(--p));
+}
+.sheet td.plus { font-weight: 700; color: var(--ok); }
+.sheet td.text { overflow-wrap: anywhere; white-space: pre-wrap; }
+.sheet td.del { width: 1%; padding: 4px 6px; }
+.sheet tfoot th, .sheet tfoot td {
+  font-weight: 700; background-color: var(--card); border-top: 3px double var(--grid); border-bottom: 0;
+}
+.sheet tbody tr.click { cursor: pointer; }
+.sheet tbody tr.click:hover > * { background-color: color-mix(in srgb, var(--select) 10%, var(--cell)); }
+.sheet a.cell-link { color: inherit; text-decoration: none; font-weight: 600; }
+.sheet a.cell-link:hover { text-decoration: underline; }
+.sheet.grp-neu thead th { background-color: var(--grey-head); }
+.sheet.grp-fertig thead th { background-color: var(--ok); }
+.sheet.colored thead th { background-color: var(--c); }
+.sheet.colored thead .rh { background-color: color-mix(in srgb, var(--c) 78%, black); }
+.sheet.colored tbody tr:nth-child(even) { --cell: color-mix(in srgb, var(--c) 9%, var(--card)); }
+.cell-btn {
+  display: inline-grid; place-items: center; min-width: 30px; height: 28px; padding: 0 8px;
+  border: 1px solid var(--grid); border-radius: 3px; background: var(--card); color: var(--danger);
+  font-size: 0.85rem; cursor: pointer;
+}
+.cell-btn:hover { background: var(--hover); }
 .empty { margin: 0; padding: 14px 4px; color: var(--muted); }
 .cross {
   justify-self: start; font-weight: 600; font-size: 0.92rem; color: var(--ink);
@@ -178,27 +230,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
 }
 .link:hover { color: var(--ink); background: var(--hover); }
 
-.log { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 0; font-size: 0.88rem; }
-.log li {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: baseline;
-  padding: 7px 0; border-bottom: 1px dashed var(--line);
-}
-.log .d { color: var(--muted); }
-.log .plus { font-weight: 700; min-width: 4.5ch; text-align: right; font-variant-numeric: tabular-nums; }
 .log-more { justify-self: start; }
-
-.thoughts { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.thoughts li {
-  display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 4px 12px; align-items: start;
-  padding: 8px 0; border-bottom: 1px solid var(--line);
-}
-.thoughts li::before {
-  content: ""; width: 7px; height: 7px; margin: 0.55em 0 0 3px;
-  background: var(--c); transform: rotate(45deg);
-}
-.t-text { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
-.t-date { display: block; font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
-.t-del { align-self: center; font-size: 1.1rem; line-height: 1; padding: 6px 9px; }
 
 .saved { margin: 0; font-size: 0.8rem; color: var(--muted); min-height: 1.2em; }
 .finish { padding: 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
@@ -300,6 +332,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
   }
   function asDate(d) { return new Date(String(d) + "T12:00:00"); }
   function longDate(d) { return asDate(d).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" }); }
+  function numDate(d) { const t = asDate(d); return isNaN(t) ? String(d) : t.toLocaleDateString("de-DE"); }
   function shortDate(d) { return asDate(d).toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }); }
   const collator = new Intl.Collator("de", { sensitivity: "base", numeric: true });
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -400,29 +433,32 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     return Math.max(0, Math.min(100, Math.round((e.page / e.total) * 100)));
   }
 
-  function row(b) {
-    const { author, title } = splitName(b.name);
-    const e = entry(b.id);
-    let side;
-    if (e.finished) {
-      side = el("div", { class: "r-side done" }, "✓ " + shortDate(e.finished));
-    } else if (e.page) {
-      side = el("div", { class: "r-side" },
-        e.total ? `S. ${e.page} / ${e.total}` : `S. ${e.page}`,
-        e.total ? el("div", { class: "mini", "aria-hidden": "true" }, el("span", { style: { width: pct(e) + "%" } })) : null);
-    } else if ((e.notes || []).length) {
-      side = el("div", { class: "r-side" }, plural(e.notes.length, "Gedanke", "Gedanken"));
-    } else {
-      side = el("div", { class: "r-side" }, "");
-    }
-    return el("li", null, el("a", {
-      class: "jrow" + (e.finished ? " done" : ""), href: "#buch-" + encodeURIComponent(b.id), style: { "--c": color(b.epoch) },
-    },
-      el("span", { class: "swatch", "aria-hidden": "true" }),
-      el("div", { class: "r-main" },
-        author ? el("p", { class: "r-author" }, author) : null,
-        el("p", { class: "r-title" }, title)),
-      side));
+  function progressCell(e) {
+    if (e.finished) return el("td", { class: "c-status done" }, "✓ " + numDate(e.finished));
+    if (e.page && e.total) return el("td", { class: "c-status databar", style: { "--p": pct(e) + "%" } }, `${e.page} / ${e.total} · ${pct(e)} %`);
+    if (e.page) return el("td", { class: "c-status" }, `S. ${e.page}`);
+    return el("td", { class: "c-status" }, "");
+  }
+
+  function bookTable(list, group) {
+    const open = (b) => { location.hash = "#buch-" + encodeURIComponent(b.id); };
+    return el("div", { class: "sheet-wrap" }, el("table", { class: "sheet wide " + group },
+      el("thead", null, el("tr", null,
+        el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
+        el("th", { class: "c-name", scope: "col" }, "Buch"),
+        el("th", { scope: "col" }, "Epoche"),
+        el("th", { scope: "col" }, "Fortschritt"),
+        el("th", { class: "num", scope: "col" }, "Gedanken"))),
+      el("tbody", null, list.map((b, i) => {
+        const e = entry(b.id);
+        const n = (e.notes || []).length;
+        return el("tr", { class: "click", style: { "--c": color(b.epoch) }, onclick: (ev) => { if (ev.target.tagName !== "A") open(b); } },
+          el("th", { class: "rh", scope: "row" }, String(i + 1)),
+          el("td", { class: "c-name" }, el("a", { class: "cell-link", href: "#buch-" + encodeURIComponent(b.id) }, b.name)),
+          el("td", { class: "c-epoch" }, b.epoch || ""),
+          progressCell(e),
+          el("td", { class: "num" }, n ? String(n) : ""));
+      }))));
   }
 
   // ---------- Übersicht ----------
@@ -450,13 +486,13 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     const done = books.filter(isDone)
       .sort((a, b) => String(entry(b.id).finished).localeCompare(String(entry(a.id).finished)));
 
-    const group = (title, list, emptyText) => el("section", null,
+    const group = (title, list, emptyText, cls) => el("section", null,
       el("h2", null, `${title} · ${list.length}`),
-      list.length ? el("ul", { class: "list" }, list.map(row)) : el("p", { class: "empty" }, emptyText));
+      list.length ? bookTable(list, cls) : el("p", { class: "empty" }, emptyText));
     view.append(
-      group("Am Lesen", reading, "Noch kein Buch angefangen. Tipp auf ein Buch, um Seiten oder Gedanken einzutragen."),
-      group("Noch nicht angefangen", fresh, "Alle Bücher sind angefangen oder gelesen."),
-      group("Gelesen", done, "Noch kein Buch fertig gelesen."),
+      group("Am Lesen", reading, "Noch kein Buch angefangen. Tipp auf ein Buch, um Seiten oder Gedanken einzutragen.", "grp-lesen"),
+      group("Noch nicht angefangen", fresh, "Alle Bücher sind angefangen oder gelesen.", "grp-neu"),
+      group("Gelesen", done, "Noch kein Buch fertig gelesen.", "grp-fertig"),
       BRIDGE ? null : el("a", { class: "cross", href: "index.html" }, "Zum Regal: Was lese ich heute?"));
   }
 
@@ -482,11 +518,12 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
       label(b, {})));
 
     // Seiten
-    const log = (e.log || []).slice().reverse();
+    const log = e.log || [];
     const days = new Set((e.log || []).map((x) => x.d)).size;
     const gained = (e.log || []).reduce((s, x) => s + Math.max(0, (x.to || 0) - (x.from || 0)), 0);
     const p = pct(e);
-    const shownLog = showAllLog ? log : log.slice(0, 5);
+    const first = showAllLog ? 0 : Math.max(0, log.length - 5);
+    const shownLog = log.slice(first);
     view.append(el("section", { "aria-labelledby": "h-pages" },
       el("h2", { id: "h-pages" }, "Seiten"),
       el("div", { class: "prog" },
@@ -506,13 +543,26 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
           el("label", { for: "total-in" }, "Seiten im Buch"),
           el("input", { id: "total-in", type: "number", inputmode: "numeric", min: "1", step: "1", placeholder: "z. B. 320", value: e.total ? String(e.total) : "",
             onchange: (ev) => setTotal(b, ev.target.value) }))),
-      shownLog.length ? el("ol", { class: "log", "aria-label": "Verlauf" }, shownLog.map((x) => {
-        const diff = (x.to || 0) - (x.from || 0);
-        return el("li", null,
-          el("span", { class: "d" }, shortDate(x.d)),
-          el("span", null, `S. ${x.from || 0} → ${x.to}`),
-          el("span", { class: "plus" }, diff > 0 ? "+" + diff : String(diff)));
-      })) : null,
+      shownLog.length ? el("div", { class: "sheet-wrap" }, el("table", { class: "sheet colored", "aria-label": "Verlauf der gelesenen Seiten" },
+        el("thead", null, el("tr", null,
+          el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
+          el("th", { scope: "col" }, "Datum"),
+          el("th", { class: "num", scope: "col" }, "Von"),
+          el("th", { class: "num", scope: "col" }, "Bis"),
+          el("th", { class: "num", scope: "col" }, "Seiten"))),
+        el("tbody", null, shownLog.map((x, i) => {
+          const diff = (x.to || 0) - (x.from || 0);
+          return el("tr", null,
+            el("th", { class: "rh", scope: "row" }, String(first + i + 1)),
+            el("td", { class: "date" }, numDate(x.d)),
+            el("td", { class: "num" }, String(x.from || 0)),
+            el("td", { class: "num" }, String(x.to)),
+            el("td", { class: "num" + (diff > 0 ? " plus" : "") }, diff > 0 ? "+" + diff : String(diff)));
+        })),
+        el("tfoot", null, el("tr", null,
+          el("th", { class: "rh", scope: "row" }, "Σ"),
+          el("td", { colspan: "3" }, `Summe (${plural(days, "Lesetag", "Lesetage")})`),
+          el("td", { class: "num" }, String(gained)))))) : null,
       log.length > 5 ? el("button", { class: "link log-more", type: "button", onclick: () => { showAllLog = !showAllLog; render(); } },
         showAllLog ? "Weniger anzeigen" : `Alle ${log.length} Einträge anzeigen`) : null));
 
@@ -520,9 +570,17 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     const notes = e.notes || [];
     view.append(el("section", { "aria-labelledby": "h-notes" },
       el("h2", { id: "h-notes" }, "Gedanken"),
-      notes.length ? el("ul", { class: "thoughts" }, notes.map((n) => el("li", null,
-        el("div", null, el("p", { class: "t-text" }, n.t), el("span", { class: "t-date" }, shortDate(n.d))),
-        el("button", { class: "link t-del", type: "button", "aria-label": "Gedanken löschen", title: "Löschen", onclick: () => removeNote(b, n.id) }, "×"))))
+      notes.length ? el("div", { class: "sheet-wrap" }, el("table", { class: "sheet colored", "aria-label": "Gedanken" },
+        el("thead", null, el("tr", null,
+          el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
+          el("th", { scope: "col" }, "Datum"),
+          el("th", { scope: "col" }, "Gedanke"),
+          el("th", { scope: "col" }, el("span", { class: "vh" }, "Löschen")))),
+        el("tbody", null, notes.map((n, i) => el("tr", null,
+          el("th", { class: "rh", scope: "row" }, String(i + 1)),
+          el("td", { class: "date" }, numDate(n.d)),
+          el("td", { class: "text" }, n.t),
+          el("td", { class: "del" }, el("button", { class: "cell-btn", type: "button", "aria-label": "Gedanken löschen", title: "Löschen", onclick: () => removeNote(b, n.id) }, "✕")))))))
         : el("p", { class: "empty" }, "Noch keine Gedanken. Schreib auf, was dir beim Lesen auffällt, einen Satz pro Punkt."),
       el("form", { class: "inline-form", autocomplete: "off", onsubmit: (ev) => { ev.preventDefault(); addNote(b); } },
         el("div", { class: "field" },

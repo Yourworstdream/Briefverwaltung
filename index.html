@@ -21,6 +21,13 @@
   --danger: #C0322B;
   --focus: #1F56D3;
   --ok: #0D7F57;
+  --grid: #C8D1E3;
+  --head: #1F56D3;
+  --head-dark: #1846B0;
+  --head-text: #FFFFFF;
+  --band: #EAF0FB;
+  --rowhead: #EDEFF4;
+  --select: #1E7145;
   --font-display: "Bodoni Moda", "Bodoni 72", Didot, Georgia, serif;
   --font-ui: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
 }
@@ -28,12 +35,14 @@
   :root:not([data-theme="light"]) {
     --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
     --shelf: #3567DE; --shelf-hi: #5E8AF0; --shelf-back: #141930; --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
+    --grid: #2E3758; --head: #2B5BD0; --head-dark: #2149AE; --head-text: #FFFFFF; --band: #1A2140; --rowhead: #1B2036; --select: #4CC38A;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
   --shelf: #3567DE; --shelf-hi: #5E8AF0; --shelf-back: #141930; --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
+    --grid: #2E3758; --head: #2B5BD0; --head-dark: #2149AE; --head-text: #FFFFFF; --band: #1A2140; --rowhead: #1B2036; --select: #4CC38A;
   color-scheme: dark;
 }
 
@@ -236,49 +245,67 @@ section { min-width: 0; }
 .hint { margin: 10px 0 22px; font-size: 0.84rem; color: var(--muted); }
 .search { margin-bottom: 8px; }
 
-.cols, .row {
-  display: grid; gap: 4px 16px; align-items: center;
-  grid-template-columns: 12px minmax(0, 1fr) minmax(0, 8.5rem) minmax(0, 9.5rem) 11.5rem;
-  grid-template-areas: "sw main genre epoch act";
+/* Verzeichnis wie eine formatierte Excel-Tabelle: farbige Kopfzeile, Gitter, Zeilennummern, Streifen */
+.sheet-wrap {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--grid); background: var(--card);
 }
-.cols {
-  padding: 10px 4px 8px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+.sheet {
+  border-collapse: separate; border-spacing: 0; width: 100%; min-width: 600px;
+  font-size: 0.9rem; line-height: 1.35;
 }
-.cols span:nth-child(1) { grid-area: main; }
-.cols span:nth-child(2) { grid-area: genre; }
-.cols span:nth-child(3) { grid-area: epoch; }
-.list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
-.row { padding: 12px 4px; border-bottom: 1px solid var(--line); }
-.row.flash { animation: flash 1.4s ease-out; }
-@keyframes flash { from { background: var(--hover); } to { background: transparent; } }
-.swatch { grid-area: sw; width: 12px; height: 36px; border-radius: 2px 2px 1px 1px; background: linear-gradient(90deg, rgb(0 0 0 / 0.25), rgb(255 255 255 / 0.15) 50%, rgb(0 0 0 / 0.25)), var(--c); }
-.row-main { grid-area: main; min-width: 0; }
-.row-title { margin: 0; font-family: var(--font-display); font-style: italic; font-size: 1.1rem; line-height: 1.25; overflow-wrap: anywhere; }
-.row-author { margin: 0 0 1px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted); overflow-wrap: anywhere; }
-.row-genre { grid-area: genre; margin: 0; font-size: 0.9rem; overflow-wrap: anywhere; }
-.row-epoch { grid-area: epoch; margin: 0; font-size: 0.9rem; display: flex; align-items: center; gap: 7px; min-width: 0; }
-.row-status { margin: 3px 0 0; font-size: 0.78rem; color: var(--muted); }
-.row-status.done { color: var(--ok); font-weight: 600; }
-.row-epoch::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
-.row-actions { grid-area: act; display: flex; justify-content: flex-end; align-items: center; gap: 2px; flex-wrap: wrap; }
-.link {
-  background: none; border: 0; border-radius: 6px; padding: 6px 9px; cursor: pointer;
-  font-size: 0.82rem; font-weight: 500; color: var(--muted);
+.sheet tbody tr { --cell: var(--card); }
+.sheet tbody tr:nth-child(even) { --cell: var(--band); }
+.sheet th, .sheet td {
+  padding: 7px 10px; text-align: left; vertical-align: middle;
+  border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid);
+  background-color: var(--cell, var(--card));
 }
-.link:hover { color: var(--ink); background: var(--hover); }
-.link.danger { color: var(--danger); }
-.link.strong { color: var(--ink); font-weight: 700; }
-.confirm-q { font-size: 0.82rem; color: var(--danger); margin-right: 4px; }
-
-.row-edit {
-  grid-column: 1 / -1;
-  display: grid; gap: 10px; align-items: end;
-  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+.sheet tr > :last-child { border-right: 0; }
+.sheet tbody tr:last-child > * { border-bottom: 0; }
+.sheet thead th {
+  background-color: var(--head); color: var(--head-text); font-weight: 700; white-space: nowrap;
+  border-right-color: rgb(255 255 255 / 0.22); border-bottom: 0;
 }
-.row-edit .acts { display: flex; gap: 4px; }
-.row.editing { display: block; }
-
-.list-empty { padding: 22px 4px; color: var(--muted); margin: 0; }
+.sheet .rh {
+  position: sticky; left: 0; z-index: 1;
+  width: 40px; min-width: 40px; padding-inline: 4px; text-align: center;
+  font-weight: 500; font-size: 0.78rem; color: var(--muted); background-color: var(--rowhead);
+  font-variant-numeric: tabular-nums;
+}
+.sheet thead .rh { background-color: var(--head-dark); color: var(--head-text); z-index: 2; }
+.sheet .c-name { position: sticky; left: 40px; z-index: 1; min-width: 180px; max-width: 260px; overflow-wrap: anywhere; }
+.sheet thead .c-name { z-index: 2; }
+.sheet td.c-epoch { background-color: color-mix(in srgb, var(--c) 24%, var(--cell)); font-weight: 600; }
+.sheet td.c-status { white-space: nowrap; min-width: 110px; }
+.sheet td.c-status.done { background-color: color-mix(in srgb, var(--ok) 20%, var(--cell)); color: var(--ok); font-weight: 700; }
+.sheet td.c-status.databar {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--c) 42%, transparent) var(--p), transparent var(--p));
+}
+.sheet .c-act { width: 1%; white-space: nowrap; }
+.sheet tr.sel > * { background-color: color-mix(in srgb, var(--select) 16%, var(--cell, var(--card))); }
+.sheet tr.sel { outline: 2px solid var(--select); outline-offset: -2px; }
+.sheet input {
+  width: 100%; min-width: 0; padding: 5px 6px; border-radius: 0;
+  border: 2px solid var(--select); background: var(--card); font-size: 0.9rem;
+}
+.sheet input:focus { outline: none; }
+.sheet td.empty { color: var(--muted); padding: 18px 12px; }
+.sort {
+  all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+}
+.sort:focus-visible { outline: 2px solid var(--head-text); outline-offset: 2px; }
+.sort .arr { font-size: 0.68em; min-width: 1ch; }
+.cell-btn {
+  display: inline-grid; place-items: center; min-width: 30px; height: 28px; padding: 0 8px;
+  border: 1px solid var(--grid); border-radius: 3px; background: var(--card); color: var(--ink);
+  font-size: 0.85rem; cursor: pointer;
+}
+.cell-btn + .cell-btn { margin-left: 4px; }
+.cell-btn:hover { background: var(--hover); }
+.cell-btn.danger { color: var(--danger); }
+.cell-btn.ok { background: var(--select); border-color: var(--select); color: var(--head-text); }
+.confirm-q { font-size: 0.82rem; color: var(--danger); margin-right: 6px; }
 .foot { margin: 18px 0 0; font-size: 0.82rem; color: var(--muted); }
 .notice { margin: 0; padding: 10px 14px; border-radius: 8px; background: var(--hover); font-size: 0.88rem; }
 
@@ -300,16 +327,6 @@ section { min-width: 0; }
   .add { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .add .f-name { grid-column: 1 / -1; }
   .add .btn { grid-column: 1 / -1; }
-  .cols { display: none; }
-  .row {
-    grid-template-columns: 12px minmax(0, auto) minmax(0, 1fr) auto;
-    grid-template-areas: "sw main main main" "sw genre epoch act";
-    gap: 6px 14px;
-  }
-  .swatch { align-self: stretch; height: auto; min-height: 36px; }
-  .row-genre, .row-epoch { font-size: 0.84rem; }
-  .row-edit { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .row-edit .f-name, .row-edit .acts { grid-column: 1 / -1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -380,8 +397,12 @@ section { min-width: 0; }
       <label for="q" class="vh">Verzeichnis durchsuchen</label>
       <input id="q" type="search" placeholder="Suchen nach Name, Genre oder Epoche">
     </div>
-    <div class="cols" aria-hidden="true"><span>Name</span><span>Genre</span><span>Epoche</span></div>
-    <ul class="list" id="list"></ul>
+    <div class="sheet-wrap">
+      <table class="sheet" aria-label="Verzeichnis der Bücher">
+        <thead><tr id="sheet-head"></tr></thead>
+        <tbody id="list"></tbody>
+      </table>
+    </div>
     <p class="foot" id="mode"></p>
   </section>
 </div>
@@ -475,6 +496,7 @@ section { min-width: 0; }
     editing: null, draft: null, confirming: null,
     query: "", fGenre: "", fEpoch: "",
     drawing: false, justDrawn: false, lastPool: null,
+    sortKey: "name", sortDir: 1,
   };
   let db = null;
 
@@ -834,10 +856,12 @@ section { min-width: 0; }
     const b = S.books.find((x) => x.id === id);
     if (!b) return;
     if (S.query && !matches(b, S.query)) { S.query = ""; $("#q").value = ""; renderList(); }
-    for (const r of document.querySelectorAll(".row")) {
+    for (const r of document.querySelectorAll("#list tr")) {
+      r.classList.remove("sel");
       if (r.dataset.id === id) {
         r.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "center" });
-        r.classList.remove("flash"); void r.offsetWidth; r.classList.add("flash");
+        r.classList.add("sel");
+        setTimeout(() => r.classList.remove("sel"), 2600);
       }
     }
   }
@@ -847,9 +871,51 @@ section { min-width: 0; }
     return !n || norm(b.name).includes(n) || norm(b.genre).includes(n) || norm(b.epoch).includes(n);
   }
 
+  // ---------- Verzeichnis als Tabelle ----------
+  const COLS = [["name", "Name"], ["genre", "Genre"], ["epoch", "Epoche"], ["status", "Status"]];
+
+  function statusRank(b) {
+    const e = J[b.id];
+    if (!e) return -1;
+    if (e.finished) return 1000;
+    if (e.page) return e.total ? (e.page / e.total) * 100 : 0.5;
+    return -1;
+  }
+  function sorter() {
+    const k = S.sortKey, d = S.sortDir;
+    return (a, b) => {
+      let r = 0;
+      if (k === "epoch") r = (epochOrder(a.epoch) - epochOrder(b.epoch)) || collator.compare(a.epoch || "", b.epoch || "");
+      else if (k === "genre") r = collator.compare(a.genre || "", b.genre || "");
+      else if (k === "status") r = statusRank(a) - statusRank(b);
+      return r * d || byName(a, b) * (k === "name" ? d : 1);
+    };
+  }
+
+  function renderHead(showStatus, write) {
+    const tr = $("#sheet-head");
+    tr.replaceChildren(el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")));
+    for (const [key, text] of COLS) {
+      if (key === "status" && !showStatus) continue;
+      const active = S.sortKey === key;
+      tr.append(el("th", {
+        scope: "col",
+        class: key === "name" ? "c-name" : null,
+        "aria-sort": active ? (S.sortDir > 0 ? "ascending" : "descending") : null,
+      }, el("button", {
+        class: "sort", type: "button",
+        onclick: () => {
+          if (S.sortKey === key) S.sortDir *= -1; else { S.sortKey = key; S.sortDir = 1; }
+          renderList();
+        },
+      }, text, el("span", { class: "arr", "aria-hidden": "true" }, active ? (S.sortDir > 0 ? "▲" : "▼") : ""))));
+    }
+    if (write) tr.append(el("th", { scope: "col" }, el("span", { class: "vh" }, "Ändern")));
+  }
+
   function renderList() {
     const list = $("#list");
-    // Was gerade im Bearbeiten-Formular steht, übersteht ein Neuzeichnen.
+    // Was gerade in der bearbeiteten Zeile steht, übersteht ein Neuzeichnen.
     if (S.editing) {
       const n = $("#ed-name"), g = $("#ed-genre"), e = $("#ed-epoch");
       if (n && g && e) S.draft = { name: n.value, genre: g.value, epoch: e.value };
@@ -860,77 +926,88 @@ section { min-width: 0; }
     $("#hint").hidden = !write;
     $("#readonly").hidden = write || !S.ready;
 
-    const rows = S.books.filter((b) => matches(b, S.query)).sort(byName);
-    if (!S.ready) { list.append(el("li", { class: "list-empty" }, "Wird geladen …")); return; }
-    if (!S.books.length) { list.append(el("li", { class: "list-empty" }, "Das Verzeichnis ist noch leer.")); return; }
-    if (!rows.length) { list.append(el("li", { class: "list-empty" }, `Nichts gefunden für „${S.query}“.`)); return; }
+    // Die Spalte „Status“ erscheint, sobald das Lesetagebuch etwas zu einem Buch weiß.
+    const showStatus = S.books.some((b) => J[b.id] && (J[b.id].finished || J[b.id].page));
+    renderHead(showStatus, write);
+    const span = String(4 + (showStatus ? 1 : 0) + (write ? 1 : 0));
+    const message = (text) => list.append(el("tr", null, el("td", { class: "empty", colspan: span }, text)));
+    if (!S.ready) return message("Wird geladen …");
+    if (!S.books.length) return message("Das Verzeichnis ist noch leer.");
+    const rows = S.books.filter((b) => matches(b, S.query)).sort(sorter());
+    if (!rows.length) return message(`Nichts gefunden für „${S.query}“.`);
 
-    for (const b of rows) {
+    rows.forEach((b, i) => {
       const c = color(b.epoch);
-      if (S.editing === b.id && write) { list.append(editRow(b, c)); continue; }
-      const { author, title } = splitName(b.name);
+      if (S.editing === b.id && write) { list.append(editRow(b, c, i + 1, showStatus)); return; }
+      const { title } = splitName(b.name);
       let actions = null;
       if (write) {
-        actions = S.confirming === b.id
-          ? el("div", { class: "row-actions" },
-              el("span", { class: "confirm-q" }, "Wirklich entfernen?"),
-              el("button", { class: "link danger strong", type: "button", onclick: async () => {
-                S.confirming = null;
-                const ok = await removeBook(b.id);
-                if (ok) notify(`„${title}“ ist aus dem Regal.`);
-                render();
-              } }, "Entfernen"),
-              el("button", { class: "link", type: "button", onclick: () => { S.confirming = null; renderList(); } }, "Behalten"))
-          : el("div", { class: "row-actions" },
-              el("button", { class: "link", type: "button", onclick: () => { S.editing = b.id; S.draft = null; S.confirming = null; renderList(); const f = $("#ed-name"); if (f) f.focus(); } }, "Bearbeiten"),
-              el("button", { class: "link danger", type: "button", onclick: () => { S.confirming = b.id; S.editing = null; renderList(); } }, "Entfernen"));
+        actions = el("td", { class: "c-act" }, S.confirming === b.id
+          ? [el("span", { class: "confirm-q" }, "Entfernen?"),
+             el("button", { class: "cell-btn danger", type: "button", onclick: async () => {
+               S.confirming = null;
+               const ok = await removeBook(b.id);
+               if (ok) notify(`„${title}“ ist aus dem Regal.`);
+               render();
+             } }, "Ja"),
+             el("button", { class: "cell-btn", type: "button", onclick: () => { S.confirming = null; renderList(); } }, "Nein")]
+          : [el("button", { class: "cell-btn", type: "button", title: "Bearbeiten", "aria-label": `${b.name} bearbeiten`,
+               onclick: () => { S.editing = b.id; S.draft = null; S.confirming = null; renderList(); const f = $("#ed-name"); if (f) f.focus(); } }, "✎"),
+             el("button", { class: "cell-btn danger", type: "button", title: "Entfernen", "aria-label": `${b.name} entfernen`,
+               onclick: () => { S.confirming = b.id; S.editing = null; renderList(); } }, "✕")]);
       }
-      list.append(el("li", { class: "row", "data-id": b.id, style: { "--c": c } },
-        el("span", { class: "swatch", "aria-hidden": "true" }),
-        el("div", { class: "row-main" },
-          author ? el("p", { class: "row-author" }, author) : null,
-          el("p", { class: "row-title" }, title),
-          rowStatus(b)),
-        el("p", { class: "row-genre" }, b.genre || "–"),
-        el("p", { class: "row-epoch" }, b.epoch || "–"),
+      list.append(el("tr", { "data-id": b.id, style: { "--c": c } },
+        el("th", { class: "rh", scope: "row" }, String(i + 1)),
+        el("td", { class: "c-name" }, b.name),
+        el("td", null, b.genre || ""),
+        el("td", { class: "c-epoch" }, b.epoch || ""),
+        showStatus ? statusCell(b) : null,
         actions));
-    }
+    });
   }
 
-  function dayLabel(d) {
-    const t = new Date(String(d) + "T12:00:00");
-    return isNaN(t) ? String(d) : t.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
-  }
-  function rowStatus(b) {
+  function statusCell(b) {
     const e = J[b.id];
-    if (!e) return null;
-    if (e.finished) return el("p", { class: "row-status done" }, "✓ Gelesen am " + dayLabel(e.finished));
-    if (e.page) return el("p", { class: "row-status" }, e.total ? `Seite ${e.page} von ${e.total}` : `Bis Seite ${e.page}`);
-    return null;
+    if (!e || (!e.finished && !e.page)) return el("td", { class: "c-status" }, "");
+    if (e.finished) {
+      const d = new Date(String(e.finished) + "T12:00:00");
+      return el("td", { class: "c-status done", title: "Gelesen" }, "✓ " + (isNaN(d) ? e.finished : d.toLocaleDateString("de-DE")));
+    }
+    if (e.total) {
+      const p = Math.max(0, Math.min(100, Math.round((e.page / e.total) * 100)));
+      return el("td", { class: "c-status databar", style: { "--p": p + "%" }, title: p + " % gelesen" }, `${e.page} / ${e.total}`);
+    }
+    return el("td", { class: "c-status" }, `S. ${e.page}`);
   }
 
-  function editRow(b, c) {
+  function editRow(b, c, n, showStatus) {
     const d = S.draft || { name: b.name, genre: b.genre || "", epoch: b.epoch || "" };
     const keepDraft = () => { S.draft = { name: $("#ed-name").value, genre: $("#ed-genre").value, epoch: $("#ed-epoch").value }; };
-    const form = el("form", { class: "row-edit", autocomplete: "off", onsubmit: async (e) => {
-      e.preventDefault();
+    const cancel = () => { S.editing = null; S.draft = null; renderList(); };
+    const save = async () => {
       const data = { name: clean($("#ed-name").value), genre: clean($("#ed-genre").value), epoch: clean($("#ed-epoch").value) };
       if (!data.name || !data.genre || !data.epoch) { notify("Bitte Name, Genre und Epoche ausfüllen."); return; }
       S.editing = null; S.draft = null;
       const ok = await updateBook(b.id, data);
       if (ok) notify("Gespeichert.");
       render();
-    } },
-      el("div", { class: "field f-name" }, el("label", { for: "ed-name" }, "Name"),
-        el("input", { id: "ed-name", required: true, maxlength: "160", value: d.name, oninput: keepDraft })),
-      el("div", { class: "field" }, el("label", { for: "ed-genre" }, "Genre"),
-        el("input", { id: "ed-genre", list: "dl-genre", required: true, maxlength: "60", value: d.genre, oninput: keepDraft })),
-      el("div", { class: "field" }, el("label", { for: "ed-epoch" }, "Epoche"),
-        el("input", { id: "ed-epoch", list: "dl-epoch", required: true, maxlength: "60", value: d.epoch, oninput: keepDraft })),
-      el("div", { class: "acts" },
-        el("button", { class: "btn", type: "submit" }, "Speichern"),
-        el("button", { class: "link", type: "button", onclick: () => { S.editing = null; S.draft = null; renderList(); } }, "Abbrechen")));
-    return el("li", { class: "row editing", "data-id": b.id, style: { "--c": c } }, form);
+    };
+    const keys = (ev) => {
+      if (ev.key === "Enter") { ev.preventDefault(); save(); }
+      else if (ev.key === "Escape") { ev.preventDefault(); cancel(); }
+    };
+    const input = (id, label, value, extra) => el("input", Object.assign({
+      id, "aria-label": label, value, maxlength: id === "ed-name" ? "160" : "60", oninput: keepDraft, onkeydown: keys,
+    }, extra || {}));
+    return el("tr", { class: "editing", "data-id": b.id, style: { "--c": c } },
+      el("th", { class: "rh", scope: "row" }, String(n)),
+      el("td", { class: "c-name" }, input("ed-name", "Name", d.name)),
+      el("td", null, input("ed-genre", "Genre", d.genre, { list: "dl-genre" })),
+      el("td", { class: "c-epoch" }, input("ed-epoch", "Epoche", d.epoch, { list: "dl-epoch" })),
+      showStatus ? statusCell(b) : null,
+      el("td", { class: "c-act" },
+        el("button", { class: "cell-btn ok", type: "button", title: "Speichern", "aria-label": "Speichern", onclick: save }, "✓"),
+        el("button", { class: "cell-btn", type: "button", title: "Abbrechen", "aria-label": "Abbrechen", onclick: cancel }, "✕")));
   }
 
   function renderMode() {
