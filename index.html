@@ -483,12 +483,25 @@ section { min-width: 0; }
   // Das Lesetagebuch speichert unter eigenem Schlüssel. Diese Seite liest daraus nur, welche Bücher fertig sind.
   const JOURNAL_KEY = "was-lese-ich-heute.tagebuch.v1";
   const STANDALONE = !window.claude || typeof window.claude.use !== "function";
+  // In der Android-App verbindet window.Bruecke diese App mit der App „Lesetagebuch“.
+  const BRIDGE = typeof window.Bruecke !== "undefined" ? window.Bruecke : null;
   let J = {};
+  let partnerOk = true;
   function loadJournal() {
     try {
-      const d = JSON.parse(localStorage.getItem(JOURNAL_KEY) || "null");
+      const raw = BRIDGE ? BRIDGE.lesen() : localStorage.getItem(JOURNAL_KEY);
+      const d = JSON.parse(raw || "null");
       J = d && d.books && typeof d.books === "object" ? d.books : {};
     } catch (e) { J = {}; }
+    if (BRIDGE) { try { partnerOk = BRIDGE.partnerDa(); } catch (e) { partnerOk = false; } }
+  }
+  function share() {
+    // Bücher und Tagesbuch für das Lesetagebuch bereitstellen. Einträge aus der früheren
+    // Version mit beiden Apps in einer APK gehen mit, damit das Lesetagebuch sie übernehmen kann.
+    if (!BRIDGE) return;
+    let legacy = null;
+    try { legacy = JSON.parse(localStorage.getItem(JOURNAL_KEY) || "null"); } catch (e) { legacy = null; }
+    try { BRIDGE.teilen(JSON.stringify({ books: S.books, today: S.today, altesTagebuch: legacy })); } catch (e) { /* Teilen fehlgeschlagen */ }
   }
   const isDone = (b) => !!(J[b.id] && J[b.id].finished);
   const openBooks = () => S.books.filter((b) => !isDone(b));
@@ -502,6 +515,7 @@ section { min-width: 0; }
   }
   function localSave() {
     try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ books: S.books, today: S.today })); } catch (e) { /* nur im Speicher */ }
+    share();
   }
   function startLocal() {
     S.mode = "local";
@@ -513,6 +527,7 @@ section { min-width: 0; }
       S.books = STARTER.map(([name, genre, epoch], i) => ({ id: "s" + i, name, genre, epoch, added: i }));
       localSave();
     }
+    share();
     S.ready = true;
     render();
   }
@@ -693,8 +708,8 @@ section { min-width: 0; }
       return;
     }
     const b = currentPick();
-    link.hidden = !(STANDALONE && b);
-    if (b) link.href = "tagebuch.html#buch-" + encodeURIComponent(b.id);
+    link.hidden = !(STANDALONE && b && partnerOk);
+    if (b) link.href = (BRIDGE ? "lesetagebuch://buch/" : "tagebuch.html#buch-") + encodeURIComponent(b.id);
     const sig = b ? [b.id, b.name, b.genre, b.epoch].join("|") : "";
     if (b && sig === lastSig && !S.justDrawn && box.classList.contains("label") && !box.classList.contains("is-empty")) {
       renderNote();

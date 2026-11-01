@@ -22,7 +22,7 @@ und zieht jeden Tag ein zufälliges Buch zum Lesen.
 - **Fertig gelesen:** Das Buch bleibt im Verzeichnis und im Regal (blass), wird von
   „Was lese ich heute?“ aber nicht mehr vorgeschlagen.
 
-Beide Apps teilen sich den Speicher des Browsers bzw. des Handys. Die Bücher selbst
+Im Browser teilen sich beide Seiten den Speicher, auf dem Handy reden die zwei Apps miteinander. Die Bücher selbst
 werden nur in „Was lese ich heute?“ eingetragen, das Tagebuch liest sie von dort.
 
 ## Benutzen
@@ -34,15 +34,29 @@ stehen schon die Bände vom Regalfoto drin.
 Die veröffentlichte Version auf claude.ai speichert das Regal online, damit es
 auf allen Geräten gleich ist.
 
-## Handy-App (Android)
+## Handy-Apps (Android)
 
-Im Ordner `android/` liegt eine kleine Android-App mit zwei Symbolen auf dem
-Startbildschirm: „Was lese ich heute?“ (`index.html`) und „Lesetagebuch“
-(`tagebuch.html`). Beide stecken in einer APK und teilen sich den Speicher. GitHub baut sie bei jeder Änderung automatisch und legt die APK unter
-**Releases → Handy-App (neueste Version)** zum Herunterladen bereit.
+Im Ordner `android/` liegen zwei eigenständige Android-Apps:
 
-1. Die Datei `Was-lese-ich-heute.apk` auf dem Handy herunterladen.
-2. Öffnen und die Installation aus unbekannten Quellen erlauben.
+| App | Paket | Seite |
+| --- | --- | --- |
+| Was lese ich heute? | `de.waslese.heute` | `index.html` |
+| Lesetagebuch | `de.waslese.tagebuch` | `tagebuch.html` |
 
-Neue Versionen lassen sich über die alte installieren, die eingetragenen Bücher
-bleiben dabei erhalten. Nur wer die App deinstalliert, verliert das Verzeichnis.
+Jede App speichert ihre eigenen Daten und gibt sie über einen ContentProvider frei.
+Lesen darf ihn nur eine App mit derselben Unterschrift (Berechtigung
+`de.waslese.DATEN`, Schutzstufe `signature`), also nur die Partner-App. Die Seite
+erreicht das über `window.Bruecke`:
+
+- „Was lese ich heute?“ teilt Bücher und Tagesbuch und liest vom Lesetagebuch, welche
+  Bücher fertig sind und wie weit du bist.
+- Das Lesetagebuch teilt seine Einträge und liest von „Was lese ich heute?“ die Bücher.
+- Links springen in die andere App: `lesetagebuch://buch/<id>` und `wasleseichheute://regal`.
+
+Beide Apps funktionieren auch allein. Ohne Partner fehlt nur der Austausch.
+
+GitHub baut beide bei jeder Änderung und legt sie unter
+**Releases → Handy-Apps (neueste Version)** als `Was-lese-ich-heute.apk` und
+`Lesetagebuch.apk` bereit. Beide auf dem Handy installieren (Installation aus
+unbekannten Quellen erlauben). Neue Versionen lassen sich über die alten
+installieren, die Einträge bleiben erhalten.

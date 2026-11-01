@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "WasLeseIchHeute"
-include(":app")
+include(":gemeinsam", ":heute", ":tagebuch")

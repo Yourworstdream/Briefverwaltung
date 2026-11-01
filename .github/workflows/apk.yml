@@ -1,6 +1,6 @@
-name: Handy-App
+name: Handy-Apps
 
-# Baut die Android-App (APK) und legt sie bei jedem Push als Download unter
+# Baut die beiden Android-Apps (APKs) und legt sie bei jedem Push als Download unter
 # https://github.com/<besitzer>/<repo>/releases/tag/app bereit.
 on:
   push:
@@ -24,25 +24,29 @@ jobs:
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: APK bauen
+      - name: APKs bauen
         working-directory: android
-        run: ./gradlew :app:assembleRelease --no-daemon
+        run: ./gradlew :heute:assembleRelease :tagebuch:assembleRelease --no-daemon
 
-      - name: APK bereitlegen
-        run: cp android/app/build/outputs/apk/release/app-release.apk Was-lese-ich-heute.apk
+      - name: APKs bereitlegen
+        run: |
+          cp android/heute/build/outputs/apk/release/heute-release.apk Was-lese-ich-heute.apk
+          cp android/tagebuch/build/outputs/apk/release/tagebuch-release.apk Lesetagebuch.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Was-lese-ich-heute
-          path: Was-lese-ich-heute.apk
+          name: Apps
+          path: |
+            Was-lese-ich-heute.apk
+            Lesetagebuch.apk
 
       - name: Als Download veröffentlichen
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete app --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
-          gh release create app Was-lese-ich-heute.apk \
+          gh release create app Was-lese-ich-heute.apk Lesetagebuch.apk \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "Handy-App (neueste Version)" \
-            --notes "Was lese ich heute? als Android-App. Auf dem Handy herunterladen und installieren (Installation aus unbekannten Quellen erlauben). Version 1.0.${GITHUB_RUN_NUMBER}, erstellt aus ${GITHUB_SHA::7}."
+            --title "Handy-Apps (neueste Version)" \
+            --notes "Zwei Apps, die zusammenarbeiten: Was lese ich heute? und Lesetagebuch. Beide auf dem Handy herunterladen und installieren (Installation aus unbekannten Quellen erlauben). Version 1.0.${GITHUB_RUN_NUMBER}, erstellt aus ${GITHUB_SHA::7}."

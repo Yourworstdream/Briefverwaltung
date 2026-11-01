@@ -253,6 +253,9 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
   const SHELF_KEY = "was-lese-ich-heute.v1";
   // Gedanken, Zusammenfassung, Seiten und „fertig gelesen“ stehen hier.
   const JOURNAL_KEY = "was-lese-ich-heute.tagebuch.v1";
+  // In der Android-App verbindet window.Bruecke dieses Tagebuch mit der App „Was lese ich heute?“.
+  const BRIDGE = typeof window.Bruecke !== "undefined" ? window.Bruecke : null;
+  const SHELF_LINK = BRIDGE ? "wasleseichheute://regal" : "index.html";
 
   const $ = (s) => document.querySelector(s);
   const reduced = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -305,10 +308,20 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
   let memory = { v: 1, books: {} };
   function readShelf() {
     try {
-      const d = JSON.parse(localStorage.getItem(SHELF_KEY) || "null");
-      if (d && Array.isArray(d.books)) return { books: d.books, today: d.today || null };
+      const raw = BRIDGE ? BRIDGE.lesen() : localStorage.getItem(SHELF_KEY);
+      const d = JSON.parse(raw || "null");
+      if (d && Array.isArray(d.books)) return { books: d.books, today: d.today || null, legacy: d.altesTagebuch || null };
     } catch (e) { /* nicht lesbar */ }
     return null;
+  }
+  function partnerMissing() {
+    if (!BRIDGE) return false;
+    try { return !BRIDGE.partnerDa(); } catch (e) { return true; }
+  }
+  // Die eigenen Einträge für „Was lese ich heute?“ bereitstellen (fertig gelesen, Seiten).
+  function share() {
+    if (!BRIDGE) return;
+    try { BRIDGE.teilen(JSON.stringify(memory)); } catch (e) { /* Teilen fehlgeschlagen */ }
   }
   function readJournal() {
     try {
@@ -326,6 +339,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     memory = data;
     try {
       localStorage.setItem(JOURNAL_KEY, JSON.stringify(data));
+      share();
       return true;
     } catch (e) {
       notify("Speichern hat nicht geklappt. Der Speicher des Geräts ist voll oder gesperrt.");
@@ -420,10 +434,13 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     const view = $("#view");
     view.replaceChildren();
     if (!shelf || !shelf.books.length) {
+      const missing = partnerMissing();
       view.append(el("section", null,
         el("h2", null, "Noch keine Bücher"),
-        el("p", { class: "empty" }, "Trag deine Bücher zuerst in „Was lese ich heute?“ ein. Sie erscheinen dann hier."),
-        el("a", { class: "cross", href: "index.html" }, "Zu „Was lese ich heute?“")));
+        el("p", { class: "empty" }, missing
+          ? "Installiere die App „Was lese ich heute?“ und trag dort deine Bücher ein. Sie erscheinen dann hier."
+          : "Trag deine Bücher zuerst in „Was lese ich heute?“ ein. Sie erscheinen dann hier."),
+        missing ? null : el("a", { class: "cross", href: SHELF_LINK }, "Zu „Was lese ich heute?“")));
       return;
     }
     const today = todaysBook();
@@ -447,7 +464,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
       group("Am Lesen", reading, "Noch kein Buch angefangen. Tipp auf ein Buch, um Seiten oder Gedanken einzutragen."),
       group("Noch nicht angefangen", fresh, "Alle Bücher sind angefangen oder gelesen."),
       group("Gelesen", done, "Noch kein Buch fertig gelesen."),
-      el("a", { class: "cross", href: "index.html" }, "Zum Regal: Was lese ich heute?"));
+      el("a", { class: "cross", href: SHELF_LINK }, "Zum Regal: Was lese ich heute?"));
   }
 
   // ---------- Ein Buch ----------
@@ -664,8 +681,23 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
   window.addEventListener("storage", refresh);
   window.addEventListener("appresume", refresh);
 
+  // Einmalig: Einträge aus der früheren Version (beide Apps in einer APK) übernehmen.
+  function importLegacy() {
+    if (!BRIDGE || !shelf || !shelf.legacy || !shelf.legacy.books) return;
+    let own = null;
+    try { own = localStorage.getItem(JOURNAL_KEY); } catch (e) { return; }
+    if (own !== null || !Object.keys(shelf.legacy.books).length) return;
+    try {
+      localStorage.setItem(JOURNAL_KEY, JSON.stringify(shelf.legacy));
+      setTimeout(() => notify("Deine bisherigen Einträge sind übernommen."), 400);
+    } catch (e) { /* bleibt beim leeren Tagebuch */ }
+  }
+
   renderDate();
   load();
+  importLegacy();
+  load();
+  share();
   render();
 })();
 </script>
