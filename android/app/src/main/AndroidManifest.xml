@@ -10,9 +10,24 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
 
+        <!-- Zwei Symbole auf dem Startbildschirm, ein gemeinsamer Speicher. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".TagebuchActivity"
+            android:exported="true"
+            android:icon="@mipmap/ic_tagebuch"
+            android:label="@string/tagebuch_name"
+            android:taskAffinity="de.waslese.heute.tagebuch"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

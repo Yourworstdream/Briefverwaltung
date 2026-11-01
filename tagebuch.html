@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lesetagebuch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: wie „Was lese ich heute?“ – eine ruhige Spalte, Farbe nur am Buch selbst. Liste aller Bücher, dann pro Buch Seiten, Gedanken, Zusammenfassung. */
+:root {
+  --paper: #F3F5FA;
+  --card: #FFFFFF;
+  --ink: #141A33;
+  --muted: #5B6382;
+  --line: #DDE2EE;
+  --hover: #E9EDF6;
+  --gilt: #D4A73F;
+  --gilt-text: #F8E9B8;
+  --danger: #C0322B;
+  --focus: #1F56D3;
+  --ok: #0D7F57;
+  --font-display: "Bodoni Moda", "Bodoni 72", Didot, Georgia, serif;
+  --font-ui: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
+    --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
+  --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 80px;
+  display: grid;
+  gap: 36px;
+}
+main { display: grid; gap: 40px; min-width: 0; }
+
+.top {
+  display: flex; justify-content: space-between; align-items: baseline;
+  flex-wrap: wrap; gap: 6px 16px;
+  padding-bottom: 14px; border-bottom: 1px solid var(--line);
+}
+.mark { margin: 0; font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: 1.3rem; letter-spacing: -0.01em; }
+.date { margin: 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+
+h2, .eyebrow {
+  margin: 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);
+}
+section { display: grid; gap: 12px; min-width: 0; }
+
+/* Etikett wie auf dem Buchrücken */
+.label {
+  --c: #2747C4;
+  position: relative; display: block;
+  border-radius: 6px; padding: 9px;
+  color: var(--gilt-text); text-decoration: none;
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.12), rgb(0 0 0 / 0.24)), var(--c);
+  box-shadow: 0 20px 40px -26px var(--c);
+}
+.label-inner {
+  position: relative; border: 1px solid var(--gilt);
+  padding: clamp(18px, 4.5vw, 34px) clamp(56px, 9vw, 90px) clamp(18px, 4.5vw, 30px) clamp(18px, 4.5vw, 36px);
+}
+.label-inner::before { content: ""; position: absolute; inset: 5px; border: 1px solid var(--gilt); opacity: 0.55; pointer-events: none; }
+.ribbon {
+  position: absolute; top: -10px; right: clamp(22px, 5vw, 40px);
+  width: 15px; height: 64px; background: var(--gilt);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+}
+.l-author { margin: 0 0 4px; font-family: var(--font-display); font-weight: 600; font-size: 0.86rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.l-title { margin: 0; font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: clamp(1.9rem, 6.5vw, 3.1rem); line-height: 1.04; text-wrap: balance; overflow-wrap: anywhere; }
+.label.small .l-title { font-size: clamp(1.5rem, 5vw, 2.1rem); }
+.orn { display: flex; align-items: center; gap: 9px; margin: 14px 0 10px; color: var(--gilt); }
+.orn::before, .orn::after { content: ""; height: 1px; width: 40px; background: currentColor; }
+.orn i { width: 7px; height: 7px; border: 1px solid currentColor; transform: rotate(45deg); }
+.l-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+.l-meta .sep { opacity: 0.6; }
+.label.small .l-meta { margin-top: 10px; letter-spacing: 0.06em; text-transform: none; font-size: 0.86rem; }
+a.label { transition: transform 0.15s; }
+a.label:hover { transform: translateY(-2px); }
+
+/* Bücherlisten */
+.list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.jrow {
+  display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 4px 16px; align-items: center;
+  padding: 12px 4px; border-bottom: 1px solid var(--line);
+  color: inherit; text-decoration: none;
+}
+.jrow:hover { background: var(--hover); }
+.swatch { width: 12px; height: 38px; border-radius: 2px 2px 1px 1px; background: linear-gradient(90deg, rgb(0 0 0 / 0.25), rgb(255 255 255 / 0.15) 50%, rgb(0 0 0 / 0.25)), var(--c); }
+.jrow.done .swatch { opacity: 0.55; filter: saturate(0.3); }
+.r-main { min-width: 0; }
+.r-author { margin: 0 0 1px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted); overflow-wrap: anywhere; }
+.r-title { margin: 0; font-family: var(--font-display); font-style: italic; font-size: 1.1rem; line-height: 1.25; overflow-wrap: anywhere; }
+.r-side { display: grid; justify-items: end; gap: 5px; font-size: 0.8rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.r-side.done { color: var(--ok); font-weight: 600; }
+.mini { width: 72px; height: 5px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.mini span { display: block; height: 100%; background: var(--c); }
+.empty { margin: 0; padding: 14px 4px; color: var(--muted); }
+.cross {
+  justify-self: start; font-weight: 600; font-size: 0.92rem; color: var(--ink);
+  text-decoration: underline; text-decoration-color: var(--gilt); text-decoration-thickness: 2px; text-underline-offset: 4px;
+}
+
+/* Einzelnes Buch */
+.back {
+  justify-self: start; display: inline-flex; align-items: center; gap: 6px;
+  color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.88rem;
+  padding: 6px 10px 6px 0;
+}
+.back:hover { color: var(--ink); }
+.detail-head { display: grid; gap: 14px; }
+
+.prog { display: grid; gap: 8px; }
+.prog-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.big { margin: 0; font-size: 0.95rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.big b { font-family: var(--font-display); font-size: 2.3rem; font-weight: 600; color: var(--ink); line-height: 1; margin-right: 4px; }
+.pct { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bar { height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--c); border-radius: inherit; transition: width 0.4s ease; }
+.stats { margin: 0; font-size: 0.84rem; color: var(--muted); }
+
+.inline-form { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
+.field { display: grid; gap: 5px; flex: 1 1 160px; min-width: 0; }
+.field label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+input, textarea {
+  width: 100%; min-width: 0;
+  border: 1px solid var(--line); background: var(--card); border-radius: 8px;
+  padding: 10px 12px; font-size: 1rem;
+}
+input:focus, textarea:focus { border-color: var(--focus); outline: none; box-shadow: 0 0 0 3px rgb(31 86 211 / 0.18); }
+textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
+.field.narrow { flex: 0 1 150px; }
+
+.btn {
+  border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
+  border-radius: 999px; padding: 10px 18px; font-weight: 600; font-size: 0.92rem; cursor: pointer;
+  transition: transform 0.12s;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn.go { animation: nudge 1.2s ease-in-out 2; }
+@keyframes nudge { 50% { transform: scale(1.05); } }
+.link {
+  background: none; border: 0; padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  font-size: 0.85rem; font-weight: 500; color: var(--muted);
+}
+.link:hover { color: var(--ink); background: var(--hover); }
+
+.log { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 0; font-size: 0.88rem; }
+.log li {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: baseline;
+  padding: 7px 0; border-bottom: 1px dashed var(--line);
+}
+.log .d { color: var(--muted); }
+.log .plus { font-weight: 700; min-width: 4.5ch; text-align: right; font-variant-numeric: tabular-nums; }
+.log-more { justify-self: start; }
+
+.thoughts { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.thoughts li {
+  display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 4px 12px; align-items: start;
+  padding: 8px 0; border-bottom: 1px solid var(--line);
+}
+.thoughts li::before {
+  content: ""; width: 7px; height: 7px; margin: 0.55em 0 0 3px;
+  background: var(--c); transform: rotate(45deg);
+}
+.t-text { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.t-date { display: block; font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.t-del { align-self: center; font-size: 1.1rem; line-height: 1; padding: 6px 9px; }
+
+.saved { margin: 0; font-size: 0.8rem; color: var(--muted); min-height: 1.2em; }
+.finish { padding: 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.finish p { margin: 0; }
+.hint { font-size: 0.86rem; color: var(--muted); }
+.done-line { font-weight: 700; color: var(--ok); }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+  display: flex; align-items: center; gap: 12px;
+  background: var(--ink); color: var(--paper);
+  padding: 9px 10px 9px 18px; border-radius: 999px; font-size: 0.88rem;
+  max-width: calc(100% - 32px); width: max-content;
+  transition: opacity 0.2s, transform 0.2s; z-index: 20;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast button { background: none; border: 0; color: var(--gilt); font-weight: 700; cursor: pointer; padding: 4px 8px; }
+.toast:not(.has-act) { padding-right: 18px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 class="mark">Lesetagebuch</h1>
+    <p class="date" id="date"></p>
+  </header>
+  <main id="view"></main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button type="button" id="toast-act" hidden></button></div>
+
+<script>
+(() => {
+  "use strict";
+
+  // Gleiche Farben und gleiche Auswahl des Tages wie in „Was lese ich heute?“ (index.html).
+  const EPOCHS = [
+    ["Antike", "#A9801A"], ["Mittelalter", "#6D5A1F"], ["Renaissance", "#4F8A2A"],
+    ["Barock", "#8C1F3A"], ["Aufklärung", "#2747C4"], ["Sturm und Drang", "#C2361F"],
+    ["Klassik", "#0F6E8C"], ["Romantik", "#C23A6B"], ["Biedermeier", "#8A5A2B"],
+    ["Vormärz", "#B4442A"], ["Realismus", "#0D7F57"], ["Naturalismus", "#C8641A"],
+    ["Fin de Siècle", "#8E2C8C"], ["Moderne", "#3A2F99"], ["Expressionismus", "#D23B2E"],
+    ["Exilliteratur", "#4F5D75"], ["Nachkriegsliteratur", "#566A2A"], ["Gegenwart", "#0A86A8"],
+  ];
+  const EXTRA = ["#7B3FA0", "#1F8A70", "#B83227", "#2E5EAA", "#A86C12", "#9B2C5E", "#2F7D32", "#5B4BB7"];
+
+  // Die Bücher gehören „Was lese ich heute?“; das Tagebuch liest sie nur.
+  const SHELF_KEY = "was-lese-ich-heute.v1";
+  // Gedanken, Zusammenfassung, Seiten und „fertig gelesen“ stehen hier.
+  const JOURNAL_KEY = "was-lese-ich-heute.tagebuch.v1";
+
+  const $ = (s) => document.querySelector(s);
+  const reduced = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function el(tag, props, ...kids) {
+    const n = document.createElement(tag);
+    if (props) for (const [k, v] of Object.entries(props)) {
+      if (v == null || v === false) continue;
+      if (k === "class") n.className = v;
+      else if (k === "style") for (const [sk, sv] of Object.entries(v)) n.style.setProperty(sk, sv);
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else if (k === "value") n.value = v;
+      else n.setAttribute(k, v === true ? "" : v);
+    }
+    for (const c of kids.flat()) if (c != null && c !== false) n.append(c instanceof Node ? c : document.createTextNode(String(c)));
+    return n;
+  }
+  function hash(s) {
+    let h = 2166136261;
+    for (const ch of String(s)) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function norm(s) {
+    return String(s || "").toLowerCase()
+      .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+      .normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "");
+  }
+  const EPOCH_COLORS = new Map(EPOCHS.map(([n, c]) => [norm(n), c]));
+  function color(epoch) {
+    const k = norm(epoch);
+    if (!k) return "#5B6382";
+    return EPOCH_COLORS.get(k) || EXTRA[hash(k) % EXTRA.length];
+  }
+  function splitName(name) {
+    const parts = String(name || "").split(/\s+[–—-]\s+/);
+    if (parts.length > 1) return { author: parts[0].trim(), title: parts.slice(1).join(" – ").trim() };
+    return { author: "", title: String(name || "").trim() };
+  }
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function asDate(d) { return new Date(String(d) + "T12:00:00"); }
+  function longDate(d) { return asDate(d).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" }); }
+  function shortDate(d) { return asDate(d).toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }); }
+  const collator = new Intl.Collator("de", { sensitivity: "base", numeric: true });
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+  // ---------- Speicher ----------
+  let memory = { v: 1, books: {} };
+  function readShelf() {
+    try {
+      const d = JSON.parse(localStorage.getItem(SHELF_KEY) || "null");
+      if (d && Array.isArray(d.books)) return { books: d.books, today: d.today || null };
+    } catch (e) { /* nicht lesbar */ }
+    return null;
+  }
+  function readJournal() {
+    try {
+      const d = JSON.parse(localStorage.getItem(JOURNAL_KEY) || "null");
+      if (d && d.books && typeof d.books === "object") memory = d;
+    } catch (e) { /* Speicher gesperrt: mit dem Stand im Speicher weiterarbeiten */ }
+    return memory;
+  }
+  // Immer frisch lesen, ändern, schreiben: so überschreibt keine App die andere.
+  function change(id, fn) {
+    const data = readJournal();
+    const entry = data.books[id] || (data.books[id] = {});
+    fn(entry);
+    entry.updated = Date.now();
+    memory = data;
+    try {
+      localStorage.setItem(JOURNAL_KEY, JSON.stringify(data));
+      return true;
+    } catch (e) {
+      notify("Speichern hat nicht geklappt. Der Speicher des Geräts ist voll oder gesperrt.");
+      return false;
+    }
+  }
+
+  let shelf = null;
+  let J = {};
+  function load() {
+    shelf = readShelf();
+    J = readJournal().books;
+  }
+  const entry = (id) => J[id] || {};
+  const isDone = (b) => !!entry(b.id).finished;
+  function todaysBook() {
+    if (!shelf) return null;
+    const open = shelf.books.filter((b) => !isDone(b));
+    if (!open.length) return null;
+    const k = todayKey();
+    if (shelf.today && shelf.today.date === k) {
+      const b = open.find((x) => x.id === shelf.today.bookId);
+      if (b) return b;
+    }
+    const sorted = open.slice().sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    return sorted[hash("tag:" + k) % sorted.length];
+  }
+  function started(e) {
+    return !!(e.page || (e.notes && e.notes.length) || (e.summary && e.summary.trim()));
+  }
+
+  // ---------- Bausteine ----------
+  function label(b, opts) {
+    const { author, title } = splitName(b.name);
+    const e = entry(b.id);
+    const kids = [
+      el("span", { class: "ribbon", "aria-hidden": "true" }),
+      el("div", { class: "label-inner" },
+        author ? el("p", { class: "l-author" }, author) : null,
+        el("p", { class: "l-title" }, title),
+        opts.small
+          ? el("p", { class: "l-meta" }, progressText(e) || "Noch nichts eingetragen")
+          : [el("div", { class: "orn", "aria-hidden": "true" }, el("i")),
+             el("p", { class: "l-meta" },
+               el("span", null, b.genre || "Ohne Genre"),
+               el("span", { class: "sep", "aria-hidden": "true" }, "·"),
+               el("span", null, b.epoch || "Ohne Epoche"))]),
+    ];
+    const props = { class: "label" + (opts.small ? " small" : ""), style: { "--c": color(b.epoch) } };
+    if (opts.href) { props.href = opts.href; return el("a", props, kids); }
+    return el("article", props, kids);
+  }
+  function progressText(e) {
+    const bits = [];
+    if (e.page) bits.push(e.total ? `Seite ${e.page} von ${e.total}` : `Bis Seite ${e.page}`);
+    const n = (e.notes || []).length;
+    if (n) bits.push(plural(n, "Gedanke", "Gedanken"));
+    return bits.join(" · ");
+  }
+  function pct(e) {
+    if (!e.total || !e.page) return 0;
+    return Math.max(0, Math.min(100, Math.round((e.page / e.total) * 100)));
+  }
+
+  function row(b) {
+    const { author, title } = splitName(b.name);
+    const e = entry(b.id);
+    let side;
+    if (e.finished) {
+      side = el("div", { class: "r-side done" }, "✓ " + shortDate(e.finished));
+    } else if (e.page) {
+      side = el("div", { class: "r-side" },
+        e.total ? `S. ${e.page} / ${e.total}` : `S. ${e.page}`,
+        e.total ? el("div", { class: "mini", "aria-hidden": "true" }, el("span", { style: { width: pct(e) + "%" } })) : null);
+    } else if ((e.notes || []).length) {
+      side = el("div", { class: "r-side" }, plural(e.notes.length, "Gedanke", "Gedanken"));
+    } else {
+      side = el("div", { class: "r-side" }, "");
+    }
+    return el("li", null, el("a", {
+      class: "jrow" + (e.finished ? " done" : ""), href: "#buch-" + encodeURIComponent(b.id), style: { "--c": color(b.epoch) },
+    },
+      el("span", { class: "swatch", "aria-hidden": "true" }),
+      el("div", { class: "r-main" },
+        author ? el("p", { class: "r-author" }, author) : null,
+        el("p", { class: "r-title" }, title)),
+      side));
+  }
+
+  // ---------- Übersicht ----------
+  function renderHome() {
+    const view = $("#view");
+    view.replaceChildren();
+    if (!shelf || !shelf.books.length) {
+      view.append(el("section", null,
+        el("h2", null, "Noch keine Bücher"),
+        el("p", { class: "empty" }, "Trag deine Bücher zuerst in „Was lese ich heute?“ ein. Sie erscheinen dann hier."),
+        el("a", { class: "cross", href: "index.html" }, "Zu „Was lese ich heute?“")));
+      return;
+    }
+    const today = todaysBook();
+    if (today) {
+      view.append(el("section", null,
+        el("h2", null, "Heute dran"),
+        label(today, { small: true, href: "#buch-" + encodeURIComponent(today.id) })));
+    }
+    const books = shelf.books.slice();
+    const reading = books.filter((b) => !isDone(b) && started(entry(b.id)))
+      .sort((a, b) => (entry(b.id).updated || 0) - (entry(a.id).updated || 0));
+    const fresh = books.filter((b) => !isDone(b) && !started(entry(b.id)))
+      .sort((a, b) => collator.compare(a.name, b.name));
+    const done = books.filter(isDone)
+      .sort((a, b) => String(entry(b.id).finished).localeCompare(String(entry(a.id).finished)));
+
+    const group = (title, list, emptyText) => el("section", null,
+      el("h2", null, `${title} · ${list.length}`),
+      list.length ? el("ul", { class: "list" }, list.map(row)) : el("p", { class: "empty" }, emptyText));
+    view.append(
+      group("Am Lesen", reading, "Noch kein Buch angefangen. Tipp auf ein Buch, um Seiten oder Gedanken einzutragen."),
+      group("Noch nicht angefangen", fresh, "Alle Bücher sind angefangen oder gelesen."),
+      group("Gelesen", done, "Noch kein Buch fertig gelesen."),
+      el("a", { class: "cross", href: "index.html" }, "Zum Regal: Was lese ich heute?"));
+  }
+
+  // ---------- Ein Buch ----------
+  let showAllLog = false;
+  function renderBook(id) {
+    const view = $("#view");
+    view.replaceChildren();
+    const b = shelf && shelf.books.find((x) => x.id === id);
+    if (!b) {
+      view.append(el("section", null,
+        el("a", { class: "back", href: "#" }, "← Alle Bücher"),
+        el("p", { class: "empty" }, "Dieses Buch steht nicht mehr im Regal.")));
+      return;
+    }
+    const e = entry(id);
+    const c = color(b.epoch);
+    const { title } = splitName(b.name);
+    view.style.setProperty("--c", c);
+
+    view.append(el("div", { class: "detail-head" },
+      el("a", { class: "back", href: "#" }, "← Alle Bücher"),
+      label(b, {})));
+
+    // Seiten
+    const log = (e.log || []).slice().reverse();
+    const days = new Set((e.log || []).map((x) => x.d)).size;
+    const gained = (e.log || []).reduce((s, x) => s + Math.max(0, (x.to || 0) - (x.from || 0)), 0);
+    const p = pct(e);
+    const shownLog = showAllLog ? log : log.slice(0, 5);
+    view.append(el("section", { "aria-labelledby": "h-pages" },
+      el("h2", { id: "h-pages" }, "Seiten"),
+      el("div", { class: "prog" },
+        el("div", { class: "prog-top" },
+          el("p", { class: "big" }, el("b", null, String(e.page || 0)), e.total ? `von ${e.total} Seiten` : "Seiten gelesen"),
+          e.total ? el("p", { class: "pct" }, p + " %") : null),
+        e.total ? el("div", { class: "bar", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(p), "aria-label": "Fortschritt" },
+          el("span", { style: { width: p + "%" } })) : null,
+        days ? el("p", { class: "stats" },
+          `${plural(days, "Lesetag", "Lesetage")} · im Schnitt ${Math.round(gained / days)} Seiten pro Tag · angefangen am ${longDate(e.log[0].d)}`) : null),
+      el("form", { class: "inline-form", id: "page-form", autocomplete: "off", onsubmit: (ev) => { ev.preventDefault(); addPage(b); } },
+        el("div", { class: "field narrow" },
+          el("label", { for: "page-in" }, "Ich bin auf Seite"),
+          el("input", { id: "page-in", type: "number", inputmode: "numeric", min: "0", step: "1", placeholder: e.page ? String(e.page + 20) : "z. B. 24" })),
+        el("button", { class: "btn", type: "submit" }, "Eintragen"),
+        el("div", { class: "field narrow" },
+          el("label", { for: "total-in" }, "Seiten im Buch"),
+          el("input", { id: "total-in", type: "number", inputmode: "numeric", min: "1", step: "1", placeholder: "z. B. 320", value: e.total ? String(e.total) : "",
+            onchange: (ev) => setTotal(b, ev.target.value) }))),
+      shownLog.length ? el("ol", { class: "log", "aria-label": "Verlauf" }, shownLog.map((x) => {
+        const diff = (x.to || 0) - (x.from || 0);
+        return el("li", null,
+          el("span", { class: "d" }, shortDate(x.d)),
+          el("span", null, `S. ${x.from || 0} → ${x.to}`),
+          el("span", { class: "plus" }, diff > 0 ? "+" + diff : String(diff)));
+      })) : null,
+      log.length > 5 ? el("button", { class: "link log-more", type: "button", onclick: () => { showAllLog = !showAllLog; render(); } },
+        showAllLog ? "Weniger anzeigen" : `Alle ${log.length} Einträge anzeigen`) : null));
+
+    // Gedanken
+    const notes = e.notes || [];
+    view.append(el("section", { "aria-labelledby": "h-notes" },
+      el("h2", { id: "h-notes" }, "Gedanken"),
+      notes.length ? el("ul", { class: "thoughts" }, notes.map((n) => el("li", null,
+        el("div", null, el("p", { class: "t-text" }, n.t), el("span", { class: "t-date" }, shortDate(n.d))),
+        el("button", { class: "link t-del", type: "button", "aria-label": "Gedanken löschen", title: "Löschen", onclick: () => removeNote(b, n.id) }, "×"))))
+        : el("p", { class: "empty" }, "Noch keine Gedanken. Schreib auf, was dir beim Lesen auffällt, einen Satz pro Punkt."),
+      el("form", { class: "inline-form", autocomplete: "off", onsubmit: (ev) => { ev.preventDefault(); addNote(b); } },
+        el("div", { class: "field" },
+          el("label", { for: "note-in", class: "vh" }, "Neuer Gedanke"),
+          el("input", { id: "note-in", maxlength: "500", placeholder: "Neuer Gedanke …", enterkeyhint: "done" })),
+        el("button", { class: "btn", type: "submit" }, "Hinzufügen"))));
+
+    // Zusammenfassung
+    view.append(el("section", { "aria-labelledby": "h-sum" },
+      el("h2", { id: "h-sum" }, "Zusammenfassung"),
+      el("label", { for: "sum-in", class: "vh" }, "Zusammenfassung"),
+      el("textarea", { id: "sum-in", rows: "7", maxlength: "20000", placeholder: "Worum geht es? Was bleibt dir von dem Buch?", value: e.summary || "",
+        oninput: (ev) => queueSummary(b, ev.target.value), onblur: (ev) => saveSummary(b, ev.target.value) }),
+      el("p", { class: "saved", id: "sum-state" }, e.summary ? "Gespeichert" : "")));
+
+    // Fertig
+    const atEnd = e.total && e.page >= e.total;
+    view.append(e.finished
+      ? el("section", { class: "finish" },
+          el("p", { class: "done-line" }, "✓ Gelesen am " + longDate(e.finished)),
+          el("p", { class: "hint" }, "„Was lese ich heute?“ schlägt dieses Buch nicht mehr vor. Im Verzeichnis findest du es weiterhin."),
+          el("button", { class: "link", type: "button", style: { "justify-self": "start" }, onclick: () => setFinished(b, false) }, "Doch noch nicht fertig"))
+      : el("section", { class: "finish" },
+          el("button", { class: "btn" + (atEnd ? " go" : ""), type: "button", style: { "justify-self": "start" }, onclick: () => setFinished(b, true) }, "Fertig gelesen"),
+          el("p", { class: "hint" }, `Danach schlägt „Was lese ich heute?“ „${title}“ nicht mehr vor. Im Verzeichnis bleibt es.`)));
+  }
+
+  // ---------- Aktionen ----------
+  function addPage(b) {
+    const input = $("#page-in");
+    const n = parseInt(input.value, 10);
+    const e = entry(b.id);
+    if (!Number.isFinite(n) || n < 0) { notify("Gib die Seite als Zahl ein."); input.focus(); return; }
+    if (e.total && n > e.total) { notify(`Das Buch hat nur ${e.total} Seiten.`); input.focus(); return; }
+    if (n === (e.page || 0)) { notify(`Du bist schon auf Seite ${n}.`); return; }
+    const ok = change(b.id, (x) => {
+      x.log = x.log || [];
+      x.log.push({ d: todayKey(), from: x.page || 0, to: n });
+      x.page = n;
+    });
+    if (!ok) return;
+    load(); render();
+    const diff = n - (e.page || 0);
+    if (e.total && n >= e.total && !e.finished) notify("Letzte Seite erreicht. Markier das Buch unten als gelesen.");
+    else notify(diff > 0 ? `${diff} Seiten eingetragen.` : `Zurück auf Seite ${n}.`);
+  }
+  function setTotal(b, raw) {
+    const n = parseInt(raw, 10);
+    const ok = change(b.id, (x) => { if (Number.isFinite(n) && n > 0) x.total = n; else delete x.total; });
+    if (!ok) return;
+    load(); render();
+    notify(Number.isFinite(n) && n > 0 ? `Seitenzahl gespeichert: ${n}.` : "Seitenzahl entfernt.");
+  }
+  function addNote(b) {
+    const input = $("#note-in");
+    const t = input.value.replace(/\s+/g, " ").trim();
+    if (!t) { input.focus(); return; }
+    const ok = change(b.id, (x) => {
+      x.notes = x.notes || [];
+      x.notes.push({ id: "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t, d: todayKey() });
+    });
+    if (!ok) return;
+    load(); render();
+    const next = $("#note-in");
+    if (next) next.focus();
+  }
+  function removeNote(b, noteId) {
+    let removed = null, at = -1;
+    const ok = change(b.id, (x) => {
+      x.notes = x.notes || [];
+      at = x.notes.findIndex((n) => n.id === noteId);
+      if (at >= 0) removed = x.notes.splice(at, 1)[0];
+    });
+    if (!ok || !removed) return;
+    load(); render();
+    notify("Gedanke gelöscht.", "Rückgängig", () => {
+      change(b.id, (x) => { x.notes = x.notes || []; x.notes.splice(Math.min(at, x.notes.length), 0, removed); });
+      load(); render();
+    });
+  }
+  let sumTimer = null;
+  function queueSummary(b, text) {
+    $("#sum-state").textContent = "…";
+    clearTimeout(sumTimer);
+    sumTimer = setTimeout(() => saveSummary(b, text), 600);
+  }
+  function saveSummary(b, text) {
+    clearTimeout(sumTimer);
+    if ((entry(b.id).summary || "") === text) { const s = $("#sum-state"); if (s && text) s.textContent = "Gespeichert"; return; }
+    if (change(b.id, (x) => { if (text.trim()) x.summary = text; else delete x.summary; })) {
+      J = readJournal().books;
+      const s = $("#sum-state");
+      if (s) s.textContent = text.trim() ? "Gespeichert" : "";
+    }
+  }
+  function setFinished(b, done) {
+    const { title } = splitName(b.name);
+    const ok = change(b.id, (x) => { if (done) x.finished = todayKey(); else delete x.finished; });
+    if (!ok) return;
+    load(); render();
+    notify(done ? `„${title}“ ist gelesen und wird nicht mehr vorgeschlagen.` : `„${title}“ wird wieder vorgeschlagen.`);
+    if (done && !reduced()) window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // ---------- Steuerung ----------
+  function currentId() {
+    const m = location.hash.match(/^#buch-(.+)$/);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+  let lastView = null;
+  function render() {
+    const id = currentId();
+    const viewKey = id || "home";
+    if (viewKey !== lastView) { showAllLog = false; }
+    if (id) renderBook(id); else renderHome();
+    document.title = id && shelf && shelf.books.find((x) => x.id === id)
+      ? splitName(shelf.books.find((x) => x.id === id).name).title + " · Lesetagebuch"
+      : "Lesetagebuch";
+    if (viewKey !== lastView) { window.scrollTo(0, 0); lastView = viewKey; }
+  }
+  function refresh() {
+    // Nicht mitten im Schreiben neu aufbauen.
+    const a = document.activeElement;
+    if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA")) return;
+    renderDate();
+    load();
+    render();
+  }
+
+  let toastTimer = null;
+  function notify(msg, actLabel, act) {
+    const t = $("#toast"), btn = $("#toast-act");
+    $("#toast-text").textContent = msg;
+    btn.hidden = !actLabel;
+    t.classList.toggle("has-act", !!actLabel);
+    btn.onclick = actLabel ? () => { t.classList.remove("show"); act(); } : null;
+    if (actLabel) btn.textContent = actLabel;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), actLabel ? 5000 : 2800);
+  }
+  function renderDate() {
+    $("#date").textContent = new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+  }
+
+  window.addEventListener("hashchange", () => { load(); render(); });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+  window.addEventListener("pageshow", refresh);
+  window.addEventListener("storage", refresh);
+  window.addEventListener("appresume", refresh);
+
+  renderDate();
+  load();
+  render();
+})();
+</script>
+</body>
+</html>

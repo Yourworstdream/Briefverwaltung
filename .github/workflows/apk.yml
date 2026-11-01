@@ -4,7 +4,7 @@ name: Handy-App
 # https://github.com/<besitzer>/<repo>/releases/tag/app bereit.
 on:
   push:
-    paths: ["index.html", "android/**", ".github/workflows/apk.yml"]
+    paths: ["index.html", "tagebuch.html", "android/**", ".github/workflows/apk.yml"]
   workflow_dispatch:
 
 permissions:

@@ -48,10 +48,10 @@ android {
     }
 }
 
-// Die App zeigt genau die index.html aus dem Hauptordner an, damit Web und Handy gleich bleiben.
+// Die Apps zeigen genau die HTML-Seiten aus dem Hauptordner an, damit Web und Handy gleich bleiben.
 abstract class WebAppKopieren : DefaultTask() {
-    @get:InputFile
-    abstract val quelle: RegularFileProperty
+    @get:InputFiles
+    abstract val quellen: ConfigurableFileCollection
 
     @get:OutputDirectory
     abstract val ziel: DirectoryProperty
@@ -60,12 +60,12 @@ abstract class WebAppKopieren : DefaultTask() {
     fun kopieren() {
         val ordner = ziel.get().asFile
         ordner.mkdirs()
-        quelle.get().asFile.copyTo(File(ordner, "index.html"), overwrite = true)
+        quellen.files.forEach { it.copyTo(File(ordner, it.name), overwrite = true) }
     }
 }
 
 val webApp = tasks.register<WebAppKopieren>("webApp") {
-    quelle.set(rootProject.file("../index.html"))
+    quellen.from(rootProject.file("../index.html"), rootProject.file("../tagebuch.html"))
 }
 
 androidComponents {

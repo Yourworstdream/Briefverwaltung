@@ -20,19 +20,20 @@
   --gilt-text: #F8E9B8;
   --danger: #C0322B;
   --focus: #1F56D3;
+  --ok: #0D7F57;
   --font-display: "Bodoni Moda", "Bodoni 72", Didot, Georgia, serif;
   --font-ui: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
-    --shelf: #3567DE; --shelf-hi: #5E8AF0; --shelf-back: #141930; --danger: #FF8A80; --focus: #8FAEFF;
+    --shelf: #3567DE; --shelf-hi: #5E8AF0; --shelf-back: #141930; --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
-  --shelf: #3567DE; --shelf-hi: #5E8AF0; --shelf-back: #141930; --danger: #FF8A80; --focus: #8FAEFF;
+  --shelf: #3567DE; --shelf-hi: #5E8AF0; --shelf-back: #141930; --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
   color-scheme: dark;
 }
 
@@ -146,6 +147,10 @@ button, input, select { font: inherit; color: inherit; }
 }
 .sel { min-width: 0; }
 .pick-note { margin: -4px 0 0; font-size: 0.85rem; color: var(--muted); }
+.journal-link {
+  justify-self: start; font-weight: 600; font-size: 0.92rem; color: var(--ink);
+  text-decoration: underline; text-decoration-color: var(--gilt); text-decoration-thickness: 2px; text-underline-offset: 4px;
+}
 
 /* Abschnittsköpfe */
 section { min-width: 0; }
@@ -211,6 +216,7 @@ section { min-width: 0; }
   clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
 }
 .spine.hop { transform: translateY(-14px); filter: brightness(1.3) saturate(1.1); }
+.spine.is-done { filter: saturate(0.2) brightness(0.95); opacity: 0.6; }
 .shelf-empty { margin: 0 0 18px; align-self: center; color: var(--muted); font-style: italic; font-family: var(--font-display); font-size: 1.1rem; }
 
 /* Verzeichnis */
@@ -251,6 +257,8 @@ section { min-width: 0; }
 .row-author { margin: 0 0 1px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted); overflow-wrap: anywhere; }
 .row-genre { grid-area: genre; margin: 0; font-size: 0.9rem; overflow-wrap: anywhere; }
 .row-epoch { grid-area: epoch; margin: 0; font-size: 0.9rem; display: flex; align-items: center; gap: 7px; min-width: 0; }
+.row-status { margin: 3px 0 0; font-size: 0.78rem; color: var(--muted); }
+.row-status.done { color: var(--ok); font-weight: 600; }
 .row-epoch::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
 .row-actions { grid-area: act; display: flex; justify-content: flex-end; align-items: center; gap: 2px; flex-wrap: wrap; }
 .link {
@@ -332,6 +340,7 @@ section { min-width: 0; }
         <select id="f-epoch"><option value="">Alle Epochen</option></select>
       </label>
     </div>
+    <a class="journal-link" id="journal-link" href="tagebuch.html" hidden>Gedanken und Seiten im Lesetagebuch notieren</a>
   </section>
 
   <section aria-labelledby="shelf-h">
@@ -471,6 +480,26 @@ section { min-width: 0; }
 
   // ---------- Speichern ----------
   const LOCAL_KEY = "was-lese-ich-heute.v1";
+  // Das Lesetagebuch speichert unter eigenem Schlüssel. Diese Seite liest daraus nur, welche Bücher fertig sind.
+  const JOURNAL_KEY = "was-lese-ich-heute.tagebuch.v1";
+  const STANDALONE = !window.claude || typeof window.claude.use !== "function";
+  let J = {};
+  function loadJournal() {
+    try {
+      const d = JSON.parse(localStorage.getItem(JOURNAL_KEY) || "null");
+      J = d && d.books && typeof d.books === "object" ? d.books : {};
+    } catch (e) { J = {}; }
+  }
+  const isDone = (b) => !!(J[b.id] && J[b.id].finished);
+  const openBooks = () => S.books.filter((b) => !isDone(b));
+  function localReload() {
+    // Vor jeder Änderung neu lesen, damit nichts überschrieben wird, was inzwischen anderswo gespeichert wurde.
+    if (S.mode !== "local") return;
+    try {
+      const data = JSON.parse(localStorage.getItem(LOCAL_KEY) || "null");
+      if (data && Array.isArray(data.books)) { S.books = data.books; S.today = data.today || null; }
+    } catch (e) { /* Speicher nicht lesbar: mit dem Stand im Speicher weiterarbeiten */ }
+  }
   function localSave() {
     try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ books: S.books, today: S.today })); } catch (e) { /* nur im Speicher */ }
   }
@@ -539,21 +568,24 @@ section { min-width: 0; }
   }
 
   // Ohne gespeicherte Wahl gilt ein Buch, das sich aus dem Datum ergibt: auf allen Geräten dasselbe.
+  // Fertig gelesene Bücher werden nicht mehr vorgeschlagen.
   function currentPick() {
-    if (!S.books.length) return null;
+    const open = openBooks();
+    if (!open.length) return null;
     const k = todayKey();
     if (S.today && S.today.date === k) {
-      const b = S.books.find((x) => x.id === S.today.bookId);
+      const b = open.find((x) => x.id === S.today.bookId);
       if (b) return b;
     }
-    const sorted = S.books.slice().sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    const sorted = open.slice().sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     return sorted[hash("tag:" + k) % sorted.length];
   }
   function pinnedToday() {
-    return !!(S.today && S.today.date === todayKey() && S.books.some((b) => b.id === S.today.bookId));
+    return !!(S.today && S.today.date === todayKey() && openBooks().some((b) => b.id === S.today.bookId));
   }
 
   async function setToday(bookId) {
+    localReload();
     const t = { date: todayKey(), bookId };
     S.today = t;
     if (S.mode === "local") { localSave(); return true; }
@@ -566,6 +598,7 @@ section { min-width: 0; }
   }
 
   async function addBook(data) {
+    localReload();
     await keepTodayStable();
     if (S.mode === "local") {
       S.books.push(Object.assign({ id: "b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), added: Date.now() }, data));
@@ -574,6 +607,7 @@ section { min-width: 0; }
     return attempt(() => db.collection("books").add(Object.assign({ added: Date.now() }, data)));
   }
   async function updateBook(id, data) {
+    localReload();
     if (S.mode === "local") {
       const b = S.books.find((x) => x.id === id);
       if (b) Object.assign(b, data);
@@ -582,6 +616,7 @@ section { min-width: 0; }
     return attempt(() => db.doc("books/" + id).update(data));
   }
   async function removeBook(id) {
+    localReload();
     const wasToday = currentPick() && currentPick().id === id;
     if (!wasToday) await keepTodayStable();
     if (S.mode === "local") {
@@ -599,7 +634,7 @@ section { min-width: 0; }
   async function draw() {
     if (S.drawing || !S.books.length) return;
     const cur = currentPick();
-    let pool = S.books.filter((b) => (!S.fGenre || b.genre === S.fGenre) && (!S.fEpoch || b.epoch === S.fEpoch));
+    let pool = openBooks().filter((b) => (!S.fGenre || b.genre === S.fGenre) && (!S.fEpoch || b.epoch === S.fEpoch));
     if (!pool.length) { notify("Kein Buch passt zu dieser Auswahl."); return; }
     const poolSize = pool.length;
     if (pool.length > 1 && cur) pool = pool.filter((b) => b.id !== cur.id);
@@ -608,7 +643,7 @@ section { min-width: 0; }
     S.drawing = true;
     $("#draw").disabled = true;
     if (!reduced()) {
-      const all = S.books.filter((b) => (!S.fGenre || b.genre === S.fGenre) && (!S.fEpoch || b.epoch === S.fEpoch));
+      const all = openBooks().filter((b) => (!S.fGenre || b.genre === S.fGenre) && (!S.fEpoch || b.epoch === S.fEpoch));
       const steps = Math.min(16, 8 + all.length);
       let prev = null;
       for (let i = 0; i < steps; i++) {
@@ -643,7 +678,8 @@ section { min-width: 0; }
   function renderPick() {
     const box = $("#pick");
     const note = $("#pick-note");
-    $("#draw").disabled = !S.ready || S.books.length < 2 || S.drawing;
+    $("#draw").disabled = !S.ready || openBooks().length < 2 || S.drawing;
+    const link = $("#journal-link");
 
     if (!S.ready) {
       lastSig = null;
@@ -653,9 +689,12 @@ section { min-width: 0; }
         el("p", { class: "empty-t" }, S.slow ? "Das Regal lässt sich gerade nicht laden" : "Regal wird geladen …"),
         S.slow ? el("p", { class: "empty-s" }, "Prüf deine Verbindung. Die Seite versucht es von selbst weiter.") : null));
       note.textContent = "";
+      link.hidden = true;
       return;
     }
     const b = currentPick();
+    link.hidden = !(STANDALONE && b);
+    if (b) link.href = "tagebuch.html#buch-" + encodeURIComponent(b.id);
     const sig = b ? [b.id, b.name, b.genre, b.epoch].join("|") : "";
     if (b && sig === lastSig && !S.justDrawn && box.classList.contains("label") && !box.classList.contains("is-empty")) {
       renderNote();
@@ -664,12 +703,15 @@ section { min-width: 0; }
     lastSig = sig;
     box.replaceChildren();
     if (!b) {
+      const allRead = S.books.length > 0;
       box.className = "label is-empty";
       box.append(el("div", { class: "label-inner" },
-        el("p", { class: "empty-t" }, S.failed ? "Das Regal ließ sich nicht laden" : "Noch kein Buch im Regal"),
+        el("p", { class: "empty-t" }, S.failed ? "Das Regal ließ sich nicht laden" : allRead ? "Alle Bücher gelesen" : "Noch kein Buch im Regal"),
         el("p", { class: "empty-s" }, S.failed
           ? "Lade die Seite später noch einmal."
-          : "Stell unten dein erstes Buch ein. Ab dann liegt hier jeden Tag eins für dich bereit.")));
+          : allRead
+            ? "Stell unten ein neues Buch ins Regal. Die gelesenen findest du weiter im Verzeichnis."
+            : "Stell unten dein erstes Buch ein. Ab dann liegt hier jeden Tag eins für dich bereit.")));
       note.textContent = "";
       return;
     }
@@ -696,7 +738,8 @@ section { min-width: 0; }
 
   function renderNote() {
     const note = $("#pick-note");
-    const n = S.books.length;
+    const n = openBooks().length;
+    const done = S.books.length - n;
     if (S.lastPool != null && pinnedToday()) {
       const filt = S.lastFilt;
       note.textContent = filt
@@ -704,8 +747,8 @@ section { min-width: 0; }
         : `Gezogen aus ${S.lastPool} ${S.lastPool === 1 ? "Buch" : "Büchern"}.`;
     } else {
       note.textContent = n === 1
-        ? "Bisher steht nur ein Buch im Regal."
-        : `Zufällig gewählt aus ${n} Büchern. Morgen liegt hier ein neues.`;
+        ? (done ? "Das ist das letzte ungelesene Buch im Regal." : "Bisher steht nur ein Buch im Regal.")
+        : `Zufällig gewählt aus ${n} ${done ? "ungelesenen " : ""}Büchern. Morgen liegt hier ein neues.`;
     }
   }
 
@@ -721,8 +764,8 @@ section { min-width: 0; }
     return keep;
   }
   function renderFilters() {
-    const genres = uniq(S.books.map((b) => b.genre)).sort(collator.compare);
-    const epochs = uniq(S.books.map((b) => b.epoch)).sort((a, b) => (epochOrder(a) - epochOrder(b)) || collator.compare(a, b));
+    const genres = uniq(openBooks().map((b) => b.genre)).sort(collator.compare);
+    const epochs = uniq(openBooks().map((b) => b.epoch)).sort((a, b) => (epochOrder(a) - epochOrder(b)) || collator.compare(a, b));
     S.fGenre = fillSelect($("#f-genre"), genres, "Alle Genres", S.fGenre);
     S.fEpoch = fillSelect($("#f-epoch"), epochs, "Alle Epochen", S.fEpoch);
     $("#dl-genre").replaceChildren(...uniq(genres.concat(GENRES)).map((v) => el("option", { value: v })));
@@ -744,7 +787,7 @@ section { min-width: 0; }
     }
     const nE = epochs.size;
     $("#count").textContent = S.ready
-      ? `${books.length} ${books.length === 1 ? "Buch" : "Bücher"} · ${nE} ${nE === 1 ? "Epoche" : "Epochen"}`
+      ? `${books.length} ${books.length === 1 ? "Buch" : "Bücher"} · ${books.filter(isDone).length ? books.filter(isDone).length + " gelesen · " : ""}${nE} ${nE === 1 ? "Epoche" : "Epochen"}`
       : "";
     for (const [name, count] of epochs) {
       legend.append(el("li", { style: { "--c": color(name === "Ohne Epoche" ? "" : name) } }, name, " ", el("span", null, count)));
@@ -760,11 +803,11 @@ section { min-width: 0; }
       const isToday = pick && pick.id === b.id;
       shelf.append(el("div", { class: "slot" },
         el("button", {
-          class: "spine" + (isToday ? " is-today" : ""),
+          class: "spine" + (isToday ? " is-today" : "") + (isDone(b) ? " is-done" : ""),
           type: "button",
           "data-id": b.id,
           title: b.name,
-          "aria-label": `${b.name}, ${b.genre || "ohne Genre"}, ${b.epoch || "ohne Epoche"}${isToday ? ", heute dran" : ""}`,
+          "aria-label": `${b.name}, ${b.genre || "ohne Genre"}, ${b.epoch || "ohne Epoche"}${isToday ? ", heute dran" : ""}${isDone(b) ? ", gelesen" : ""}`,
           style: { "--c": color(b.epoch), "--w": (30 + (h % 15)) + "px", "--sh": (80 + ((h >>> 5) % 19)) + "%" },
           onclick: () => focusRow(b.id),
         },
@@ -832,11 +875,24 @@ section { min-width: 0; }
         el("span", { class: "swatch", "aria-hidden": "true" }),
         el("div", { class: "row-main" },
           author ? el("p", { class: "row-author" }, author) : null,
-          el("p", { class: "row-title" }, title)),
+          el("p", { class: "row-title" }, title),
+          rowStatus(b)),
         el("p", { class: "row-genre" }, b.genre || "–"),
         el("p", { class: "row-epoch" }, b.epoch || "–"),
         actions));
     }
+  }
+
+  function dayLabel(d) {
+    const t = new Date(String(d) + "T12:00:00");
+    return isNaN(t) ? String(d) : t.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
+  }
+  function rowStatus(b) {
+    const e = J[b.id];
+    if (!e) return null;
+    if (e.finished) return el("p", { class: "row-status done" }, "✓ Gelesen am " + dayLabel(e.finished));
+    if (e.page) return el("p", { class: "row-status" }, e.total ? `Seite ${e.page} von ${e.total}` : `Bis Seite ${e.page}`);
+    return null;
   }
 
   function editRow(b, c) {
@@ -897,13 +953,25 @@ section { min-width: 0; }
   $("#f-genre").addEventListener("change", (e) => { S.fGenre = e.target.value; });
   $("#f-epoch").addEventListener("change", (e) => { S.fEpoch = e.target.value; });
   $("#draw").addEventListener("click", draw);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden && S.ready) { renderDate(); render(); } });
+  // Zurück in der App: neu lesen, was das Lesetagebuch inzwischen gespeichert hat.
+  function refresh() {
+    if (!S.ready) return;
+    loadJournal();
+    localReload();
+    renderDate();
+    render();
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+  window.addEventListener("pageshow", refresh);
+  window.addEventListener("storage", refresh);
+  window.addEventListener("appresume", refresh);
 
   function renderDate() {
     $("#date").textContent = new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
   }
 
   // ---------- Start ----------
+  loadJournal();
   renderDate();
   render();
   if (!window.claude || typeof window.claude.use !== "function") {
