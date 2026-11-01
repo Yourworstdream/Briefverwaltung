@@ -1,0 +1,48 @@
+name: Handy-App
+
+# Baut die Android-App (APK) und legt sie bei jedem Push als Download unter
+# https://github.com/<besitzer>/<repo>/releases/tag/app bereit.
+on:
+  push:
+    paths: ["index.html", "android/**", ".github/workflows/apk.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: APK bauen
+        working-directory: android
+        run: ./gradlew :app:assembleRelease --no-daemon
+
+      - name: APK bereitlegen
+        run: cp android/app/build/outputs/apk/release/app-release.apk Was-lese-ich-heute.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Was-lese-ich-heute
+          path: Was-lese-ich-heute.apk
+
+      - name: Als Download veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete app --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+          gh release create app Was-lese-ich-heute.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Handy-App (neueste Version)" \
+            --notes "Was lese ich heute? als Android-App. Auf dem Handy herunterladen und installieren (Installation aus unbekannten Quellen erlauben). Version 1.0.${GITHUB_RUN_NUMBER}, erstellt aus ${GITHUB_SHA::7}."
