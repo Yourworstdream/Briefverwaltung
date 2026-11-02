@@ -2,6 +2,6 @@
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/icon_back" />
     <foreground android:drawable="@mipmap/ic_launcher_foreground" />
-    <!-- Für „Designfarben“-Symbole ab Android 13 -->
+    <!-- Mit „Designsymbolen“ (ab Android 13) färbt das System diese Glyphe passend zum Hintergrundbild -->
     <monochrome android:drawable="@mipmap/ic_launcher_monochrome" />
 </adaptive-icon>
