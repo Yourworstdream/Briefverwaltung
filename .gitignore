@@ -1,17 +1,5 @@
-__pycache__/
-*.pyc
-
-# Echte Briefe gehören nicht ins Repository
-/Briefe/
-/briefe/
-einstellungen.json
-
-# Android (Build-Ergebnisse)
 android/.gradle/
-android/.kotlin/
 android/build/
 android/app/build/
-android/analyse/build/
-android/analyse/.gradle/
-android/analyse/.kotlin/
 android/local.properties
+*.apk

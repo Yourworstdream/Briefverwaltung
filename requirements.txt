@@ -1,7 +1,0 @@
-# Python-Pakete für die Briefverwaltung:  pip install -r requirements.txt
-PyMySQL>=1.0          # Verbindung zur MySQL-/MariaDB-Datenbank
-Pillow>=9.1           # Fotos anzeigen, drehen, Vorschaubilder
-qrcode>=7.0           # QR-Code zum Verbinden der Handy-App
-
-# Optional: Fotos im HEIC-Format (iPhone) anzeigen
-# pillow-heif
