@@ -248,6 +248,8 @@ section { min-width: 0; }
 /* Verzeichnis wie eine formatierte Excel-Tabelle: farbige Kopfzeile, Gitter, Zeilennummern, Streifen */
 .ico { display: inline-block; flex: none; vertical-align: -0.18em; }
 .sheet-wrap {
+  /* relative: auch unsichtbare Beschriftungen bleiben im Scrollbereich und verbreitern die Seite nicht */
+  position: relative;
   overflow-x: auto; -webkit-overflow-scrolling: touch;
   border: 1px solid var(--grid); background: var(--card);
 }
@@ -328,6 +330,16 @@ section { min-width: 0; }
   .add { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .add .f-name { grid-column: 1 / -1; }
   .add .btn { grid-column: 1 / -1; }
+}
+
+/* Schmale Handys: Tabelle enger setzen, damit mehr Spalten ohne Wischen passen */
+@media (max-width: 480px) {
+  .sheet { font-size: 0.84rem; min-width: 500px; }
+  .sheet th, .sheet td { padding: 6px 7px; }
+  .sheet .rh { width: 30px; min-width: 30px; padding-inline: 2px; }
+  .sheet .c-name { left: 30px; min-width: 128px; }
+  .sheet td.c-status { min-width: 0; }
+  .cell-btn { min-width: 28px; height: 28px; padding: 0 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
