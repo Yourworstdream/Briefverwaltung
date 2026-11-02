@@ -122,6 +122,7 @@ a.label:hover { transform: translateY(-2px); }
 
 /* Bücherlisten */
 /* Listen wie formatierte Excel-Tabellen: farbige Kopfzeile, Gitter, Zeilennummern, Streifen, Datenbalken */
+.ico { display: inline-block; flex: none; vertical-align: -0.18em; }
 .sheet-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--grid); background: var(--card); }
 .sheet {
   border-collapse: separate; border-spacing: 0; width: 100%;
@@ -187,7 +188,7 @@ a.label:hover { transform: translateY(-2px); }
 
 /* Einzelnes Buch */
 .back {
-  justify-self: start; display: inline-flex; align-items: center; gap: 6px;
+  justify-self: start; display: inline-flex; align-items: center; gap: 4px;
   color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.88rem;
   padding: 6px 10px 6px 0;
 }
@@ -291,6 +292,29 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
 
   const $ = (s) => document.querySelector(s);
   const reduced = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Schlichte Linien-Symbole statt Schriftzeichen: überall gleich scharf, folgen der Textfarbe.
+  const ICONS = {
+    edit: ["M4 20h4L19 9a2.83 2.83 0 0 0-4-4L4 16v4z", "M13.5 6.5l4 4"],
+    x: ["M6 6l12 12", "M18 6L6 18"],
+    check: ["M5 12.5l4.5 4.5L19 7.5"],
+    up: ["M7 14l5-5 5 5"],
+    down: ["M7 10l5 5 5-5"],
+    back: ["M15 6l-6 6 6 6"],
+  };
+  function icon(name, size) {
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg");
+    const attrs = { viewBox: "0 0 24 24", width: size || 16, height: size || 16, fill: "none", stroke: "currentColor",
+      "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true", class: "ico" };
+    for (const [k, v] of Object.entries(attrs)) svg.setAttribute(k, String(v));
+    for (const d of ICONS[name]) {
+      const path = document.createElementNS(NS, "path");
+      path.setAttribute("d", d);
+      svg.append(path);
+    }
+    return svg;
+  }
 
   function el(tag, props, ...kids) {
     const n = document.createElement(tag);
@@ -434,7 +458,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
   }
 
   function progressCell(e) {
-    if (e.finished) return el("td", { class: "c-status done" }, "✓ " + numDate(e.finished));
+    if (e.finished) return el("td", { class: "c-status done" }, icon("check", 14), " " + numDate(e.finished));
     if (e.page && e.total) return el("td", { class: "c-status databar", style: { "--p": pct(e) + "%" } }, `${e.page} / ${e.total} · ${pct(e)} %`);
     if (e.page) return el("td", { class: "c-status" }, `S. ${e.page}`);
     return el("td", { class: "c-status" }, "");
@@ -504,7 +528,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     const b = shelf && shelf.books.find((x) => x.id === id);
     if (!b) {
       view.append(el("section", null,
-        el("a", { class: "back", href: "#" }, "← Alle Bücher"),
+        el("a", { class: "back", href: "#" }, icon("back", 16), "Alle Bücher"),
         el("p", { class: "empty" }, "Dieses Buch steht nicht mehr im Regal.")));
       return;
     }
@@ -514,7 +538,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     view.style.setProperty("--c", c);
 
     view.append(el("div", { class: "detail-head" },
-      el("a", { class: "back", href: "#" }, "← Alle Bücher"),
+      el("a", { class: "back", href: "#" }, icon("back", 16), "Alle Bücher"),
       label(b, {})));
 
     // Seiten
@@ -580,7 +604,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
           el("th", { class: "rh", scope: "row" }, String(i + 1)),
           el("td", { class: "date" }, numDate(n.d)),
           el("td", { class: "text" }, n.t),
-          el("td", { class: "del" }, el("button", { class: "cell-btn", type: "button", "aria-label": "Gedanken löschen", title: "Löschen", onclick: () => removeNote(b, n.id) }, "✕")))))))
+          el("td", { class: "del" }, el("button", { class: "cell-btn", type: "button", "aria-label": "Gedanken löschen", title: "Löschen", onclick: () => removeNote(b, n.id) }, icon("x", 15))))))))
         : el("p", { class: "empty" }, "Noch keine Gedanken. Schreib auf, was dir beim Lesen auffällt, einen Satz pro Punkt."),
       el("form", { class: "inline-form", autocomplete: "off", onsubmit: (ev) => { ev.preventDefault(); addNote(b); } },
         el("div", { class: "field" },
@@ -600,7 +624,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     const atEnd = e.total && e.page >= e.total;
     view.append(e.finished
       ? el("section", { class: "finish" },
-          el("p", { class: "done-line" }, "✓ Gelesen am " + longDate(e.finished)),
+          el("p", { class: "done-line" }, icon("check", 16), " Gelesen am " + longDate(e.finished)),
           el("p", { class: "hint" }, "„Was lese ich heute?“ schlägt dieses Buch nicht mehr vor. Im Verzeichnis findest du es weiterhin."),
           el("button", { class: "link", type: "button", style: { "justify-self": "start" }, onclick: () => setFinished(b, false) }, "Doch noch nicht fertig"))
       : el("section", { class: "finish" },

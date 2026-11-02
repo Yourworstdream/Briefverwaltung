@@ -246,6 +246,7 @@ section { min-width: 0; }
 .search { margin-bottom: 8px; }
 
 /* Verzeichnis wie eine formatierte Excel-Tabelle: farbige Kopfzeile, Gitter, Zeilennummern, Streifen */
+.ico { display: inline-block; flex: none; vertical-align: -0.18em; }
 .sheet-wrap {
   overflow-x: auto; -webkit-overflow-scrolling: touch;
   border: 1px solid var(--grid); background: var(--card);
@@ -295,7 +296,7 @@ section { min-width: 0; }
   all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
 }
 .sort:focus-visible { outline: 2px solid var(--head-text); outline-offset: 2px; }
-.sort .arr { font-size: 0.68em; min-width: 1ch; }
+.sort .arr { display: inline-flex; min-width: 14px; }
 .cell-btn {
   display: inline-grid; place-items: center; min-width: 30px; height: 28px; padding: 0 8px;
   border: 1px solid var(--grid); border-radius: 3px; background: var(--card); color: var(--ink);
@@ -438,6 +439,29 @@ section { min-width: 0; }
 
   const $ = (s) => document.querySelector(s);
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  // Schlichte Linien-Symbole statt Schriftzeichen: überall gleich scharf, folgen der Textfarbe.
+  const ICONS = {
+    edit: ["M4 20h4L19 9a2.83 2.83 0 0 0-4-4L4 16v4z", "M13.5 6.5l4 4"],
+    x: ["M6 6l12 12", "M18 6L6 18"],
+    check: ["M5 12.5l4.5 4.5L19 7.5"],
+    up: ["M7 14l5-5 5 5"],
+    down: ["M7 10l5 5 5-5"],
+    back: ["M15 6l-6 6 6 6"],
+  };
+  function icon(name, size) {
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg");
+    const attrs = { viewBox: "0 0 24 24", width: size || 16, height: size || 16, fill: "none", stroke: "currentColor",
+      "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true", class: "ico" };
+    for (const [k, v] of Object.entries(attrs)) svg.setAttribute(k, String(v));
+    for (const d of ICONS[name]) {
+      const path = document.createElementNS(NS, "path");
+      path.setAttribute("d", d);
+      svg.append(path);
+    }
+    return svg;
+  }
+
   const reduced = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function el(tag, props, ...kids) {
@@ -908,7 +932,7 @@ section { min-width: 0; }
           if (S.sortKey === key) S.sortDir *= -1; else { S.sortKey = key; S.sortDir = 1; }
           renderList();
         },
-      }, text, el("span", { class: "arr", "aria-hidden": "true" }, active ? (S.sortDir > 0 ? "▲" : "▼") : ""))));
+      }, text, el("span", { class: "arr", "aria-hidden": "true" }, active ? icon(S.sortDir > 0 ? "up" : "down", 14) : ""))));
     }
     if (write) tr.append(el("th", { scope: "col" }, el("span", { class: "vh" }, "Ändern")));
   }
@@ -952,9 +976,9 @@ section { min-width: 0; }
              } }, "Ja"),
              el("button", { class: "cell-btn", type: "button", onclick: () => { S.confirming = null; renderList(); } }, "Nein")]
           : [el("button", { class: "cell-btn", type: "button", title: "Bearbeiten", "aria-label": `${b.name} bearbeiten`,
-               onclick: () => { S.editing = b.id; S.draft = null; S.confirming = null; renderList(); const f = $("#ed-name"); if (f) f.focus(); } }, "✎"),
+               onclick: () => { S.editing = b.id; S.draft = null; S.confirming = null; renderList(); const f = $("#ed-name"); if (f) f.focus(); } }, icon("edit", 15)),
              el("button", { class: "cell-btn danger", type: "button", title: "Entfernen", "aria-label": `${b.name} entfernen`,
-               onclick: () => { S.confirming = b.id; S.editing = null; renderList(); } }, "✕")]);
+               onclick: () => { S.confirming = b.id; S.editing = null; renderList(); } }, icon("x", 15))]);
       }
       list.append(el("tr", { "data-id": b.id, style: { "--c": c } },
         el("th", { class: "rh", scope: "row" }, String(i + 1)),
@@ -971,7 +995,7 @@ section { min-width: 0; }
     if (!e || (!e.finished && !e.page)) return el("td", { class: "c-status" }, "");
     if (e.finished) {
       const d = new Date(String(e.finished) + "T12:00:00");
-      return el("td", { class: "c-status done", title: "Gelesen" }, "✓ " + (isNaN(d) ? e.finished : d.toLocaleDateString("de-DE")));
+      return el("td", { class: "c-status done", title: "Gelesen" }, icon("check", 14), " " + (isNaN(d) ? e.finished : d.toLocaleDateString("de-DE")));
     }
     if (e.total) {
       const p = Math.max(0, Math.min(100, Math.round((e.page / e.total) * 100)));
@@ -1006,8 +1030,8 @@ section { min-width: 0; }
       el("td", { class: "c-epoch" }, input("ed-epoch", "Epoche", d.epoch, { list: "dl-epoch" })),
       showStatus ? statusCell(b) : null,
       el("td", { class: "c-act" },
-        el("button", { class: "cell-btn ok", type: "button", title: "Speichern", "aria-label": "Speichern", onclick: save }, "✓"),
-        el("button", { class: "cell-btn", type: "button", title: "Abbrechen", "aria-label": "Abbrechen", onclick: cancel }, "✕")));
+        el("button", { class: "cell-btn ok", type: "button", title: "Speichern", "aria-label": "Speichern", onclick: save }, icon("check", 15)),
+        el("button", { class: "cell-btn", type: "button", title: "Abbrechen", "aria-label": "Abbrechen", onclick: cancel }, icon("x", 15))));
   }
 
   function renderMode() {
