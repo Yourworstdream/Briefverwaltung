@@ -315,13 +315,16 @@ section { min-width: 0; }
 .toast {
   position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+  display: flex; align-items: center; gap: 12px;
   background: var(--ink); color: var(--paper);
-  padding: 10px 18px; border-radius: 999px; font-size: 0.88rem;
+  padding: 9px 10px 9px 18px; border-radius: 999px; font-size: 0.88rem;
   max-width: calc(100% - 32px); width: max-content; text-align: center;
   transition: opacity 0.2s, transform 0.2s;
   z-index: 20;
 }
-.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast button { background: none; border: 0; color: var(--gilt); font-weight: 700; cursor: pointer; padding: 4px 8px; }
+.toast:not(.has-act) { padding-right: 18px; }
 
 @media (max-width: 680px) {
   .wrap { gap: 40px; }
@@ -419,7 +422,7 @@ section { min-width: 0; }
     <p class="foot" id="mode"></p>
   </section>
 </div>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button type="button" id="toast-act" hidden></button></div>
 
 <script>
 (() => {
@@ -648,8 +651,12 @@ section { min-width: 0; }
       const b = open.find((x) => x.id === S.today.bookId);
       if (b) return b;
     }
-    const sorted = open.slice().sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-    return sorted[hash("tag:" + k) % sorted.length];
+    // Jedes Buch hat seinen eigenen Rang für den Tag: die Wahl springt nicht, wenn ein anderes Buch wegfällt.
+    const rank = (b) => hash("tag:" + k + ":" + b.id);
+    return open.reduce((best, b) => {
+      const rb = rank(b), rs = rank(best);
+      return rb < rs || (rb === rs && b.id < best.id) ? b : best;
+    });
   }
   function pinnedToday() {
     return !!(S.today && S.today.date === todayKey() && openBooks().some((b) => b.id === S.today.bookId));
@@ -696,6 +703,16 @@ section { min-width: 0; }
     }
     return attempt(() => db.doc("books/" + id).delete());
   }
+  // Ein entferntes Buch mit derselben id und denselben Feldern zurückstellen.
+  async function restoreBook(book) {
+    localReload();
+    if (S.mode === "local") {
+      if (!S.books.some((x) => x.id === book.id)) S.books.push(book);
+      localSave(); render(); return true;
+    }
+    const { id, ...data } = book;
+    return attempt(() => db.doc("books/" + id).set(data));
+  }
 
   // ---------- Ziehen ----------
   function spineEl(id) {
@@ -705,7 +722,10 @@ section { min-width: 0; }
   async function draw() {
     if (S.drawing || !S.books.length) return;
     const cur = currentPick();
-    let pool = openBooks().filter((b) => (!S.fGenre || b.genre === S.fGenre) && (!S.fEpoch || b.epoch === S.fEpoch));
+    // Wie die Auswahlliste: bereinigt und ohne Unterschied zwischen Groß- und Kleinschreibung.
+    const same = (v, f) => !f || clean(v).toLowerCase() === clean(f).toLowerCase();
+    const fits = (b) => same(b.genre, S.fGenre) && same(b.epoch, S.fEpoch);
+    let pool = openBooks().filter(fits);
     if (!pool.length) { notify("Kein Buch passt zu dieser Auswahl."); return; }
     const poolSize = pool.length;
     if (pool.length > 1 && cur) pool = pool.filter((b) => b.id !== cur.id);
@@ -714,7 +734,7 @@ section { min-width: 0; }
     S.drawing = true;
     $("#draw").disabled = true;
     if (!reduced()) {
-      const all = openBooks().filter((b) => (!S.fGenre || b.genre === S.fGenre) && (!S.fEpoch || b.epoch === S.fEpoch));
+      const all = openBooks().filter(fits);
       const steps = Math.min(16, 8 + all.length);
       let prev = null;
       for (let i = 0; i < steps; i++) {
@@ -731,6 +751,7 @@ section { min-width: 0; }
     S.justDrawn = true;
     S.lastPool = poolSize;
     S.lastFilt = [S.fGenre, S.fEpoch].filter(Boolean).join(", ");
+    S.lastDraw = { date: todayKey(), bookId: winner.id };
     const saving = setToday(winner.id);
     render();
     await saving;
@@ -812,7 +833,9 @@ section { min-width: 0; }
     const note = $("#pick-note");
     const n = openBooks().length;
     const done = S.books.length - n;
-    if (S.lastPool != null && pinnedToday()) {
+    // Nur wenn heute gezogen wurde und die Ziehung noch das Tagesbuch ist.
+    const cur = currentPick();
+    if (S.lastPool != null && S.lastDraw && S.lastDraw.date === todayKey() && cur && cur.id === S.lastDraw.bookId) {
       const filt = S.lastFilt;
       note.textContent = filt
         ? `Gezogen aus ${S.lastPool} ${S.lastPool === 1 ? "Buch" : "Büchern"} (${filt}).`
@@ -820,7 +843,7 @@ section { min-width: 0; }
     } else {
       note.textContent = n === 1
         ? (done ? "Das ist das letzte ungelesene Buch im Regal." : "Bisher steht nur ein Buch im Regal.")
-        : `Zufällig gewählt aus ${n} ${done ? "ungelesenen " : ""}Büchern. Morgen liegt hier ein neues.`;
+        : `Zufällig gewählt aus ${n} ${done ? "ungelesenen " : ""}Büchern. Morgen wird neu gewählt.`;
     }
   }
 
@@ -952,9 +975,13 @@ section { min-width: 0; }
   function renderList() {
     const list = $("#list");
     // Was gerade in der bearbeiteten Zeile steht, übersteht ein Neuzeichnen.
+    let refocus = null;
     if (S.editing) {
       const n = $("#ed-name"), g = $("#ed-genre"), e = $("#ed-epoch");
       if (n && g && e) S.draft = { name: n.value, genre: g.value, epoch: e.value };
+      // Auch Fokus und Cursor im bearbeiteten Feld überstehen das Neuzeichnen.
+      const a = document.activeElement;
+      if (a && /^ed-/.test(a.id)) refocus = { id: a.id, start: a.selectionStart, end: a.selectionEnd };
     }
     list.replaceChildren();
     const write = S.canWrite;
@@ -982,8 +1009,12 @@ section { min-width: 0; }
           ? [el("span", { class: "confirm-q" }, "Entfernen?"),
              el("button", { class: "cell-btn danger", type: "button", onclick: async () => {
                S.confirming = null;
+               const removed = Object.assign({}, b);
                const ok = await removeBook(b.id);
-               if (ok) notify(`„${title}“ ist aus dem Regal.`);
+               if (ok) notify(`„${title}“ ist aus dem Regal.`, "Rückgängig", async () => {
+                 if (await restoreBook(removed)) notify(`„${title}“ steht wieder im Regal.`);
+                 render();
+               });
                render();
              } }, "Ja"),
              el("button", { class: "cell-btn", type: "button", onclick: () => { S.confirming = null; renderList(); } }, "Nein")]
@@ -1000,6 +1031,11 @@ section { min-width: 0; }
         showStatus ? statusCell(b) : null,
         actions));
     });
+    const f = refocus && document.getElementById(refocus.id);
+    if (f) {
+      f.focus();
+      try { f.setSelectionRange(refocus.start, refocus.end); } catch (e) { /* Feld ohne Cursor */ }
+    }
   }
 
   function statusCell(b) {
@@ -1023,6 +1059,7 @@ section { min-width: 0; }
     const save = async () => {
       const data = { name: clean($("#ed-name").value), genre: clean($("#ed-genre").value), epoch: clean($("#ed-epoch").value) };
       if (!data.name || !data.genre || !data.epoch) { notify("Bitte Name, Genre und Epoche ausfüllen."); return; }
+      if (S.books.some((x) => x.id !== b.id && norm(x.name) === norm(data.name))) { notify(`„${splitName(data.name).title}“ steht schon im Regal.`); return; }
       S.editing = null; S.draft = null;
       const ok = await updateBook(b.id, data);
       if (ok) notify("Gespeichert.");
@@ -1055,12 +1092,16 @@ section { min-width: 0; }
   }
 
   let toastTimer = null;
-  function notify(msg) {
-    const t = $("#toast");
-    t.textContent = msg;
+  function notify(msg, actLabel, act) {
+    const t = $("#toast"), btn = $("#toast-act");
+    $("#toast-text").textContent = msg;
+    btn.hidden = !actLabel;
+    t.classList.toggle("has-act", !!actLabel);
+    btn.onclick = actLabel ? () => { t.classList.remove("show"); act(); } : null;
+    if (actLabel) btn.textContent = actLabel;
     t.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove("show"), 2800);
+    toastTimer = setTimeout(() => t.classList.remove("show"), actLabel ? 5000 : 2800);
   }
 
   // ---------- Eingaben ----------

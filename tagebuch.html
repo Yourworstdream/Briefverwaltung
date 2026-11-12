@@ -429,8 +429,12 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
       const b = open.find((x) => x.id === shelf.today.bookId);
       if (b) return b;
     }
-    const sorted = open.slice().sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-    return sorted[hash("tag:" + k) % sorted.length];
+    // Jedes Buch hat seinen eigenen Rang für den Tag: die Wahl springt nicht, wenn ein anderes Buch wegfällt.
+    const rank = (b) => hash("tag:" + k + ":" + b.id);
+    return open.reduce((best, b) => {
+      const rb = rank(b), rs = rank(best);
+      return rb < rs || (rb === rs && b.id < best.id) ? b : best;
+    });
   }
   function started(e) {
     return !!(e.page || (e.notes && e.notes.length) || (e.summary && e.summary.trim()));
@@ -556,7 +560,8 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     // Seiten
     const log = e.log || [];
     const days = new Set((e.log || []).map((x) => x.d)).size;
-    const gained = (e.log || []).reduce((s, x) => s + Math.max(0, (x.to || 0) - (x.from || 0)), 0);
+    // Netto gelesen: von der ersten eingetragenen Startseite bis zur aktuellen Seite, Tippfehler heben sich auf.
+    const gained = log.length ? Math.max(0, (e.page || 0) - (log[0].from || 0)) : 0;
     const p = pct(e);
     const first = showAllLog ? 0 : Math.max(0, log.length - 5);
     const shownLog = log.slice(first);
@@ -569,7 +574,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
         e.total ? el("div", { class: "bar", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(p), "aria-label": "Fortschritt" },
           el("span", { style: { width: p + "%" } })) : null,
         days ? el("p", { class: "stats" },
-          `${plural(days, "Lesetag", "Lesetage")} · im Schnitt ${Math.round(gained / days)} Seiten pro Tag · angefangen am ${longDate(e.log[0].d)}`) : null),
+          `${plural(days, "Lesetag", "Lesetage")} · im Schnitt ${plural(Math.round(gained / days), "Seite", "Seiten")} pro Tag · angefangen am ${longDate(e.log[0].d)}`) : null),
       el("form", { class: "inline-form", id: "page-form", autocomplete: "off", onsubmit: (ev) => { ev.preventDefault(); addPage(b); } },
         el("div", { class: "field narrow" },
           el("label", { for: "page-in" }, "Ich bin auf Seite"),
@@ -578,7 +583,9 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
         el("div", { class: "field narrow" },
           el("label", { for: "total-in" }, "Seiten im Buch"),
           el("input", { id: "total-in", type: "number", inputmode: "numeric", min: "1", step: "1", placeholder: "z. B. 320", value: e.total ? String(e.total) : "",
-            onchange: (ev) => setTotal(b, ev.target.value) }))),
+            onchange: (ev) => setTotal(b, ev.target.value),
+            // Enter speichert nur die Seitenzahl, ohne das Seiten-Formular abzuschicken.
+            onkeydown: (ev) => { if (ev.key === "Enter") { ev.preventDefault(); ev.target.blur(); } } }))),
       shownLog.length ? el("div", { class: "sheet-wrap" }, el("table", { class: "sheet colored", "aria-label": "Verlauf der gelesenen Seiten" },
         el("thead", null, el("tr", null,
           el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
@@ -660,11 +667,18 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     if (!ok) return;
     load(); render();
     const diff = n - (e.page || 0);
-    if (e.total && n >= e.total && !e.finished) notify("Letzte Seite erreicht. Markier das Buch unten als gelesen.");
-    else notify(diff > 0 ? `${diff} Seiten eingetragen.` : `Zurück auf Seite ${n}.`);
+    if (e.total && n >= e.total && !e.finished) notify("Letzte Seite erreicht. Markier das Buch unten als fertig gelesen.");
+    else notify(diff > 0 ? `${plural(diff, "Seite", "Seiten")} eingetragen.` : `Zurück auf Seite ${n}.`);
   }
   function setTotal(b, raw) {
     const n = parseInt(raw, 10);
+    const page = entry(b.id).page || 0;
+    if (Number.isFinite(n) && n > 0 && n < page) {
+      const input = $("#total-in");
+      if (input) input.value = entry(b.id).total ? String(entry(b.id).total) : "";
+      notify(`Du bist schon auf Seite ${page}. Das Buch muss mindestens so viele Seiten haben.`);
+      return;
+    }
     const ok = change(b.id, (x) => { if (Number.isFinite(n) && n > 0) x.total = n; else delete x.total; });
     if (!ok) return;
     load(); render();
@@ -697,18 +711,26 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
       load(); render();
     });
   }
-  let sumTimer = null;
+  let sumTimer = null, sumPending = null;
   function queueSummary(b, text) {
     $("#sum-state").textContent = "…";
     clearTimeout(sumTimer);
+    sumPending = { b, text };
     sumTimer = setTimeout(() => saveSummary(b, text), 600);
+  }
+  // Eine noch wartende Zusammenfassung sofort speichern (Seite verlassen, Buch wechseln).
+  function flushSummary() {
+    if (sumPending) saveSummary(sumPending.b, sumPending.text);
   }
   function saveSummary(b, text) {
     clearTimeout(sumTimer);
-    if ((entry(b.id).summary || "") === text) { const s = $("#sum-state"); if (s && text) s.textContent = "Gespeichert"; return; }
+    sumPending = null;
+    // Den Status nur im Feld dieses Buchs setzen, nicht in der Ansicht eines anderen.
+    const state = () => (currentId() === b.id ? $("#sum-state") : null);
+    if ((entry(b.id).summary || "") === text) { const s = state(); if (s && text) s.textContent = "Gespeichert"; return; }
     if (change(b.id, (x) => { if (text.trim()) x.summary = text; else delete x.summary; })) {
       J = readJournal().books;
-      const s = $("#sum-state");
+      const s = state();
       if (s) s.textContent = text.trim() ? "Gespeichert" : "";
     }
   }
@@ -724,7 +746,9 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
   // ---------- Steuerung ----------
   function currentId() {
     const m = location.hash.match(/^#buch-(.+)$/);
-    return m ? decodeURIComponent(m[1]) : null;
+    if (!m) return null;
+    // Ein kaputter Verweis (z. B. „%E0“) führt zur Übersicht statt zu einer leeren Seite.
+    try { return decodeURIComponent(m[1]); } catch (e) { return null; }
   }
   let lastView = null;
   function render() {
@@ -737,14 +761,40 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
       : "Lesetagebuch";
     if (viewKey !== lastView) { window.scrollTo(0, 0); lastView = viewKey; }
   }
-  function refresh() {
-    // Nicht mitten im Schreiben neu aufbauen.
+  const typing = () => {
     const a = document.activeElement;
-    if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA")) return;
+    return !!(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA"));
+  };
+  // Neu zeichnen, ohne noch nicht abgeschickte Eingaben (Seite, Gedanke) zu verlieren.
+  function renderKeepingDrafts() {
+    flushSummary();
+    const id = currentId();
+    const drafts = ["page-in", "note-in"].map((k) => [k, $("#" + k) ? $("#" + k).value : ""]);
+    render();
+    if (currentId() !== id) return;
+    for (const [k, v] of drafts) { const f = $("#" + k); if (f && v) f.value = v; }
+  }
+  let renderPending = false, pointerDown = false;
+  function refresh() {
     renderDate();
     load();
-    render();
+    // Nicht mitten im Schreiben neu aufbauen: das Neuzeichnen kommt, sobald das Feld verlassen ist.
+    if (typing()) { renderPending = true; return; }
+    renderPending = false;
+    renderKeepingDrafts();
   }
+  function catchUp() {
+    if (!renderPending || typing()) return;
+    // Nicht zwischen Drücken und Loslassen neu zeichnen, sonst geht der Klick auf einen Knopf verloren.
+    if (pointerDown) return;
+    renderPending = false;
+    renderKeepingDrafts();
+  }
+  // Erst nach dem Fokuswechsel prüfen, ob schon das nächste Feld den Fokus hat.
+  document.addEventListener("focusout", () => { if (renderPending) setTimeout(catchUp, 0); });
+  document.addEventListener("pointerdown", () => { pointerDown = true; }, true);
+  document.addEventListener("pointerup", () => { pointerDown = false; if (renderPending) setTimeout(catchUp, 0); }, true);
+  document.addEventListener("pointercancel", () => { pointerDown = false; if (renderPending) setTimeout(catchUp, 0); }, true);
 
   let toastTimer = null;
   function notify(msg, actLabel, act) {
@@ -762,8 +812,9 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     $("#date").textContent = new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
   }
 
-  window.addEventListener("hashchange", () => { load(); render(); });
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+  window.addEventListener("hashchange", () => { flushSummary(); renderPending = false; load(); render(); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) flushSummary(); else refresh(); });
+  window.addEventListener("pagehide", flushSummary);
   window.addEventListener("pageshow", refresh);
   window.addEventListener("storage", refresh);
   window.addEventListener("appresume", refresh);
