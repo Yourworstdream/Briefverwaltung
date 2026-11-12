@@ -250,7 +250,8 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
   max-width: calc(100% - 32px); width: max-content;
   transition: opacity 0.2s, transform 0.2s; z-index: 20;
 }
-.toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.has-act.show { pointer-events: auto; }
 .toast button { background: none; border: 0; color: var(--gilt); font-weight: 700; cursor: pointer; padding: 4px 8px; }
 .toast:not(.has-act) { padding-right: 18px; }
 
@@ -638,9 +639,9 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     view.append(el("section", { "aria-labelledby": "h-sum" },
       el("h2", { id: "h-sum" }, "Zusammenfassung"),
       el("label", { for: "sum-in", class: "vh" }, "Zusammenfassung"),
-      el("textarea", { id: "sum-in", rows: "7", maxlength: "20000", placeholder: "Worum geht es? Was bleibt dir von dem Buch?", value: e.summary || "",
+      el("textarea", { id: "sum-in", rows: "7", maxlength: "20000", placeholder: "Worum geht es? Was bleibt dir von dem Buch?", value: (sumDraft && sumDraft.id === id) ? sumDraft.text : (e.summary || ""),
         oninput: (ev) => queueSummary(b, ev.target.value), onblur: (ev) => saveSummary(b, ev.target.value) }),
-      el("p", { class: "saved", id: "sum-state" }, e.summary ? "Gespeichert" : "")));
+      el("p", { class: "saved", id: "sum-state" }, (sumDraft && sumDraft.id === id) ? "Nicht gespeichert" : e.summary ? "Gespeichert" : "")));
 
     // Fertig
     const atEnd = e.total && e.page >= e.total;
@@ -714,7 +715,8 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
       load(); render();
     });
   }
-  let sumTimer = null, sumPending = null;
+  // sumDraft: Text, der nicht gespeichert werden konnte (Speicher voll); bleibt im Feld stehen.
+  let sumTimer = null, sumPending = null, sumDraft = null;
   function queueSummary(b, text) {
     $("#sum-state").textContent = "…";
     clearTimeout(sumTimer);
@@ -730,11 +732,21 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     sumPending = null;
     // Den Status nur im Feld dieses Buchs setzen, nicht in der Ansicht eines anderen.
     const state = () => (currentId() === b.id ? $("#sum-state") : null);
-    if ((entry(b.id).summary || "") === text) { const s = state(); if (s && text) s.textContent = "Gespeichert"; return; }
+    if ((entry(b.id).summary || "") === text) {
+      if (sumDraft && sumDraft.id === b.id) sumDraft = null;
+      const s = state(); if (s && text) s.textContent = "Gespeichert";
+      return;
+    }
     if (change(b.id, (x) => { if (text.trim()) x.summary = text; else delete x.summary; })) {
+      if (sumDraft && sumDraft.id === b.id) sumDraft = null;
       J = readJournal().books;
       const s = state();
       if (s) s.textContent = text.trim() ? "Gespeichert" : "";
+    } else {
+      // Nicht still verwerfen: der Text bleibt als Entwurf, auch wenn die Ansicht neu gezeichnet wird.
+      sumDraft = { id: b.id, text };
+      const s = state();
+      if (s) s.textContent = "Nicht gespeichert";
     }
   }
   function setFinished(b, done) {
@@ -758,6 +770,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     const id = currentId();
     const viewKey = id || "home";
     if (viewKey !== lastView) { showAllLog = false; }
+    renderPending = false;
     if (id) renderBook(id); else renderHome();
     document.title = id && shelf && shelf.books.find((x) => x.id === id)
       ? splitName(shelf.books.find((x) => x.id === id).name).title + " · Lesetagebuch"
@@ -769,6 +782,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     return !!(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA"));
   };
   // Neu zeichnen, ohne noch nicht abgeschickte Eingaben (Seite, Gedanke) zu verlieren.
+  // Die Zusammenfassung bleibt über flushSummary() und sumDraft erhalten.
   function renderKeepingDrafts() {
     flushSummary();
     const id = currentId();
@@ -777,46 +791,71 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     if (currentId() !== id) return;
     for (const [k, v] of drafts) { const f = $("#" + k); if (f && v) f.value = v; }
   }
-  let renderPending = false, pointerDown = false;
+  // Gedrückte Zeiger nach pointerId: ein verlorenes pointerup (Gesten, Fenster weg) hält nichts dauerhaft fest.
+  const pointers = new Set();
+  let renderPending = false;
   function refresh() {
     renderDate();
     load();
-    // Nicht mitten im Schreiben neu aufbauen: das Neuzeichnen kommt, sobald das Feld verlassen ist.
-    if (typing()) { renderPending = true; return; }
+    // Nicht mitten im Schreiben oder zwischen Drücken und Loslassen neu aufbauen: das Neuzeichnen kommt nach.
+    if (typing() || pointers.size) { renderPending = true; return; }
     renderPending = false;
     renderKeepingDrafts();
   }
   function catchUp() {
-    if (!renderPending || typing()) return;
-    // Nicht zwischen Drücken und Loslassen neu zeichnen, sonst geht der Klick auf einen Knopf verloren.
-    if (pointerDown) return;
+    if (!renderPending || pointers.size) return;
+    // Hat ein Knopf, Link oder Feld den Fokus, würde das Neuzeichnen ihn ersetzen und den Fokus verlieren.
+    // Dann wartet es bis zum nächsten focusout oder pointerup (oder bis ohnehin neu gezeichnet wird).
+    const a = document.activeElement;
+    if (a && a !== document.body) return;
     renderPending = false;
     renderKeepingDrafts();
   }
-  // Erst nach dem Fokuswechsel prüfen, ob schon das nächste Feld den Fokus hat.
-  document.addEventListener("focusout", () => { if (renderPending) setTimeout(catchUp, 0); });
-  document.addEventListener("pointerdown", () => { pointerDown = true; }, true);
-  document.addEventListener("pointerup", () => { pointerDown = false; if (renderPending) setTimeout(catchUp, 0); }, true);
-  document.addEventListener("pointercancel", () => { pointerDown = false; if (renderPending) setTimeout(catchUp, 0); }, true);
+  const later = () => { if (renderPending) setTimeout(catchUp, 0); };
+  // Erst nach dem Fokuswechsel prüfen, ob schon das nächste Element den Fokus hat.
+  document.addEventListener("focusout", later);
+  document.addEventListener("pointerdown", (ev) => { pointers.add(ev.pointerId); }, true);
+  document.addEventListener("pointerup", (ev) => { pointers.delete(ev.pointerId); later(); }, true);
+  document.addEventListener("pointercancel", (ev) => { pointers.delete(ev.pointerId); later(); }, true);
+  window.addEventListener("blur", () => { pointers.clear(); });
 
-  let toastTimer = null;
+  let toastTimer = null, toastMs = 2800;
+  // Ausgeblendet ist der Toast auch für Tastatur und Screenreader weg: Knopf versteckt, Handler entfernt.
+  function hideToast() {
+    clearTimeout(toastTimer);
+    $("#toast").classList.remove("show");
+    const btn = $("#toast-act");
+    btn.hidden = true;
+    btn.onclick = null;
+  }
+  function armToast() {
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      const t = $("#toast");
+      // Solange der Knopf den Fokus hat oder der Zeiger darüber ist, bleibt der Toast stehen.
+      if (t.matches(":hover") || t.contains(document.activeElement)) return;
+      hideToast();
+    }, toastMs);
+  }
+  $("#toast").addEventListener("focusout", () => { if ($("#toast").classList.contains("show")) armToast(); });
+  $("#toast").addEventListener("pointerleave", () => { if ($("#toast").classList.contains("show")) armToast(); });
   function notify(msg, actLabel, act) {
     const t = $("#toast"), btn = $("#toast-act");
     $("#toast-text").textContent = msg;
     btn.hidden = !actLabel;
     t.classList.toggle("has-act", !!actLabel);
-    btn.onclick = actLabel ? () => { t.classList.remove("show"); act(); } : null;
+    btn.onclick = actLabel ? () => { hideToast(); act(); } : null;
     if (actLabel) btn.textContent = actLabel;
     t.classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove("show"), actLabel ? 5000 : 2800);
+    toastMs = actLabel ? 5000 : 2800;
+    armToast();
   }
   function renderDate() {
     $("#date").textContent = new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
   }
 
-  window.addEventListener("hashchange", () => { flushSummary(); renderPending = false; load(); render(); });
-  document.addEventListener("visibilitychange", () => { if (document.hidden) flushSummary(); else refresh(); });
+  window.addEventListener("hashchange", () => { flushSummary(); load(); render(); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) { pointers.clear(); flushSummary(); } else refresh(); });
   window.addEventListener("pagehide", flushSummary);
   window.addEventListener("pageshow", refresh);
   window.addEventListener("storage", refresh);

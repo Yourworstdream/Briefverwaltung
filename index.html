@@ -322,7 +322,8 @@ section { min-width: 0; }
   transition: opacity 0.2s, transform 0.2s;
   z-index: 20;
 }
-.toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.has-act.show { pointer-events: auto; }
 .toast button { background: none; border: 0; color: var(--gilt); font-weight: 700; cursor: pointer; padding: 4px 8px; }
 .toast:not(.has-act) { padding-right: 18px; }
 
@@ -706,6 +707,11 @@ section { min-width: 0; }
   // Ein entferntes Buch mit derselben id und denselben Feldern zurückstellen.
   async function restoreBook(book) {
     localReload();
+    // Hat inzwischen ein anderes Buch denselben Namen, bliebe sonst ein Doppelgänger im Regal.
+    if (S.books.some((x) => x.id !== book.id && norm(x.name) === norm(book.name))) {
+      notify(`„${splitName(book.name).title}“ steht schon im Regal.`);
+      return false;
+    }
     if (S.mode === "local") {
       if (!S.books.some((x) => x.id === book.id)) S.books.push(book);
       localSave(); render(); return true;
@@ -1059,7 +1065,7 @@ section { min-width: 0; }
     const save = async () => {
       const data = { name: clean($("#ed-name").value), genre: clean($("#ed-genre").value), epoch: clean($("#ed-epoch").value) };
       if (!data.name || !data.genre || !data.epoch) { notify("Bitte Name, Genre und Epoche ausfüllen."); return; }
-      if (S.books.some((x) => x.id !== b.id && norm(x.name) === norm(data.name))) { notify(`„${splitName(data.name).title}“ steht schon im Regal.`); return; }
+      if (norm(data.name) !== norm(b.name) && S.books.some((x) => x.id !== b.id && norm(x.name) === norm(data.name))) { notify(`„${splitName(data.name).title}“ steht schon im Regal.`); return; }
       S.editing = null; S.draft = null;
       const ok = await updateBook(b.id, data);
       if (ok) notify("Gespeichert.");
@@ -1091,17 +1097,36 @@ section { min-width: 0; }
       : "Dieses Regal wird nur auf diesem Gerät gespeichert.";
   }
 
-  let toastTimer = null;
+  let toastTimer = null, toastMs = 2800;
+  // Ausgeblendet ist der Toast auch für Tastatur und Screenreader weg: Knopf versteckt, Handler entfernt.
+  function hideToast() {
+    clearTimeout(toastTimer);
+    $("#toast").classList.remove("show");
+    const btn = $("#toast-act");
+    btn.hidden = true;
+    btn.onclick = null;
+  }
+  function armToast() {
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      const t = $("#toast");
+      // Solange der Knopf den Fokus hat oder der Zeiger darüber ist, bleibt der Toast stehen.
+      if (t.matches(":hover") || t.contains(document.activeElement)) return;
+      hideToast();
+    }, toastMs);
+  }
+  $("#toast").addEventListener("focusout", () => { if ($("#toast").classList.contains("show")) armToast(); });
+  $("#toast").addEventListener("pointerleave", () => { if ($("#toast").classList.contains("show")) armToast(); });
   function notify(msg, actLabel, act) {
     const t = $("#toast"), btn = $("#toast-act");
     $("#toast-text").textContent = msg;
     btn.hidden = !actLabel;
     t.classList.toggle("has-act", !!actLabel);
-    btn.onclick = actLabel ? () => { t.classList.remove("show"); act(); } : null;
+    btn.onclick = actLabel ? () => { hideToast(); act(); } : null;
     if (actLabel) btn.textContent = actLabel;
     t.classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove("show"), actLabel ? 5000 : 2800);
+    toastMs = actLabel ? 5000 : 2800;
+    armToast();
   }
 
   // ---------- Eingaben ----------
