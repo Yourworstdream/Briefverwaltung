@@ -5,6 +5,10 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.webkit.JavascriptInterface;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
 /**
  * Die Seite erreicht diese Klasse als window.Bruecke.
  * teilen(): eigene Daten für die Partner-App bereitstellen.
@@ -33,6 +37,21 @@ public class Bruecke {
     @JavascriptInterface
     public String lesen() {
         Uri adresse = Uri.parse("content://" + partnerPaket + ".daten/daten");
+        // Zuerst die Datei selbst (ohne Größengrenze). Eine ältere Partner-App kennt das noch nicht
+        // und wirft FileNotFoundException; dann bleibt der alte Weg über die Abfrage.
+        try (InputStream ein = context.getContentResolver().openInputStream(adresse)) {
+            if (ein != null) {
+                ByteArrayOutputStream puffer = new ByteArrayOutputStream();
+                byte[] block = new byte[8192];
+                int n;
+                while ((n = ein.read(block)) > 0) {
+                    puffer.write(block, 0, n);
+                }
+                return new String(puffer.toByteArray(), StandardCharsets.UTF_8);
+            }
+        } catch (Exception e) {
+            // Weiter mit der Abfrage.
+        }
         try (Cursor zeilen = context.getContentResolver().query(adresse, null, null, null, null)) {
             if (zeilen != null && zeilen.moveToFirst()) {
                 String json = zeilen.getString(0);

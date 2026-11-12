@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="paper">#F3F5FA</color>
+    <!-- Navigationsleiste unter Android 8.0 und älter: dort sind die Tasten immer weiß, also dunkler Grund -->
+    <color name="nav_alt">#232C61</color>
 </resources>

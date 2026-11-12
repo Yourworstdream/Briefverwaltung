@@ -6,12 +6,15 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
+import android.os.ParcelFileDescriptor;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 
 /**
  * Gibt die Daten dieser App für die Partner-App frei: eine Zeile, eine Spalte "json".
@@ -44,8 +47,15 @@ public class DatenProvider extends ContentProvider {
             if (!datei.exists()) {
                 return "";
             }
-            try {
-                return new String(Files.readAllBytes(datei.toPath()), StandardCharsets.UTF_8);
+            // Kein java.nio.file: das gibt es erst ab Android 8 (API 26), die App läuft ab Android 7.
+            try (FileInputStream ein = new FileInputStream(datei);
+                 ByteArrayOutputStream puffer = new ByteArrayOutputStream()) {
+                byte[] block = new byte[8192];
+                int n;
+                while ((n = ein.read(block)) > 0) {
+                    puffer.write(block, 0, n);
+                }
+                return new String(puffer.toByteArray(), StandardCharsets.UTF_8);
             } catch (IOException e) {
                 return "";
             }
@@ -62,6 +72,24 @@ public class DatenProvider extends ContentProvider {
         MatrixCursor ergebnis = new MatrixCursor(new String[] {"json"});
         ergebnis.addRow(new Object[] {lesen(getContext())});
         return ergebnis;
+    }
+
+    /**
+     * Gibt die Datei selbst heraus. Anders als query() hat das keine Größengrenze
+     * (ein Cursor-Fenster fasst nur etwa 2 MB je Zeile).
+     */
+    @Override
+    public ParcelFileDescriptor openFile(Uri uri, String modus) throws FileNotFoundException {
+        if (!"r".equals(modus)) {
+            throw new SecurityException("Nur lesen");
+        }
+        synchronized (SPERRE) {
+            File datei = new File(getContext().getFilesDir(), DATEI);
+            if (!datei.exists()) {
+                throw new FileNotFoundException("Noch nichts geteilt");
+            }
+            return ParcelFileDescriptor.open(datei, ParcelFileDescriptor.MODE_READ_ONLY);
+        }
     }
 
     @Override
