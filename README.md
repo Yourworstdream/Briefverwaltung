@@ -24,6 +24,8 @@ und zieht jeden Tag ein zufälliges Buch zum Lesen.
 
 Im Browser teilen sich beide Seiten den Speicher, auf dem Handy reden die zwei Apps miteinander. Die Bücher selbst
 werden nur in „Was lese ich heute?“ eingetragen, das Tagebuch liest sie von dort.
+Im Browser verlinkt „Was lese ich heute?“ unter dem Buch des Tages auf das Lesetagebuch,
+und das Lesetagebuch verlinkt zurück zum Regal. In den Android-Apps gibt es diese Links nicht.
 
 ## Benutzen
 
@@ -43,10 +45,16 @@ Im Ordner `android/` liegen zwei eigenständige Android-Apps:
 | Was lese ich heute? | `de.waslese.heute` | `index.html` |
 | Lesetagebuch | `de.waslese.tagebuch` | `tagebuch.html` |
 
+Beide Apps binden die gemeinsame Bibliothek im Ordner `android/gemeinsam` ein. Sie enthält
+die Anzeige der Seite, die Brücke `window.Bruecke` und die Datenschnittstelle.
+
 Jede App speichert ihre eigenen Daten und gibt sie über einen ContentProvider frei.
 Lesen darf ihn nur eine App mit derselben Unterschrift (Berechtigung
-`de.waslese.DATEN`, Schutzstufe `signature`), also nur die Partner-App. Die Seite
-erreicht das über `window.Bruecke`:
+`de.waslese.DATEN`, Schutzstufe `signature`), also nur die Partner-App. Weil der Schlüssel
+`android/heute.keystore` im Repo liegt, kann jede damit signierte App die Daten ebenfalls
+lesen. Für ein privates Projekt ist das in Ordnung. Für eine veröffentlichte App gehört der
+Schlüssel in ein Secret. Der Provider gibt seine Daten als Datei heraus, es gibt also keine
+Größengrenze. Die Seite erreicht das über `window.Bruecke`:
 
 - „Was lese ich heute?“ teilt Bücher und Tagesbuch und liest vom Lesetagebuch, welche
   Bücher fertig sind und wie weit du bist.
