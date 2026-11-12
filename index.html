@@ -90,7 +90,7 @@ button, input, select { font: inherit; color: inherit; }
   border-radius: 6px;
   padding: 10px;
   color: var(--gilt-text);
-  background: linear-gradient(160deg, rgb(255 255 255 / 0.12), rgb(0 0 0 / 0.24)), var(--c);
+  background: linear-gradient(160deg, rgb(0 0 0 / 0.22), rgb(0 0 0 / 0.40)), var(--c);
   box-shadow: 0 1px 0 rgb(0 0 0 / 0.06), 0 22px 44px -26px var(--c);
   transition: background-color 0.3s;
 }
@@ -157,7 +157,7 @@ button, input, select { font: inherit; color: inherit; }
 .sel { min-width: 0; }
 .pick-note { margin: -4px 0 0; font-size: 0.85rem; color: var(--muted); }
 .journal-link {
-  justify-self: start; font-weight: 600; font-size: 0.92rem; color: var(--ink);
+  justify-self: start; display: inline-flex; align-items: center; min-height: 40px; font-weight: 600; font-size: 0.92rem; color: var(--ink);
   text-decoration: underline; text-decoration-color: var(--gilt); text-decoration-thickness: 2px; text-underline-offset: 4px;
 }
 
@@ -241,7 +241,7 @@ section { min-width: 0; }
   border: 1px solid var(--line); background: var(--card); border-radius: 8px;
   padding: 10px 12px; font-size: 0.95rem;
 }
-.field input:focus, .search input:focus { border-color: var(--focus); outline: none; box-shadow: 0 0 0 3px rgb(31 86 211 / 0.18); }
+.field input:focus, .search input:focus { border-color: var(--focus); outline: 2px solid var(--focus); outline-offset: 1px; box-shadow: 0 0 0 3px rgb(31 86 211 / 0.18); }
 .hint { margin: 10px 0 22px; font-size: 0.84rem; color: var(--muted); }
 .search { margin-bottom: 8px; }
 
@@ -292,10 +292,10 @@ section { min-width: 0; }
   width: 100%; min-width: 0; padding: 5px 6px; border-radius: 0;
   border: 2px solid var(--select); background: var(--card); font-size: 0.9rem;
 }
-.sheet input:focus { outline: none; }
+.sheet input:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
 .sheet td.empty { color: var(--muted); padding: 18px 12px; }
 .sort {
-  all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; min-height: 36px;
 }
 .sort:focus-visible { outline: 2px solid var(--head-text); outline-offset: 2px; }
 .sort .arr { display: inline-flex; min-width: 14px; }
@@ -342,7 +342,7 @@ section { min-width: 0; }
   .sheet .rh { width: 30px; min-width: 30px; padding-inline: 2px; }
   .sheet .c-name { left: 30px; min-width: 128px; }
   .sheet td.c-status { min-width: 0; }
-  .cell-btn { min-width: 28px; height: 28px; padding: 0 6px; }
+  .cell-btn { min-width: 36px; height: 36px; padding: 0 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -405,7 +405,7 @@ section { min-width: 0; }
       </div>
       <button class="btn" type="submit">Ins Regal stellen</button>
     </form>
-    <p class="hint" id="hint">Schreib den Namen als „Autor – Titel“, dann steht der Autor auf dem Buchrücken.</p>
+    <p class="hint" id="hint">Schreib den Namen als „Autor – Titel“, dann steht der Nachname des Autors auf dem Buchrücken.</p>
     <datalist id="dl-genre"></datalist>
     <datalist id="dl-epoch"></datalist>
 

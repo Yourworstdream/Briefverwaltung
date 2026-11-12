@@ -95,7 +95,7 @@ section { display: grid; gap: 12px; min-width: 0; }
   position: relative; display: block;
   border-radius: 6px; padding: 9px;
   color: var(--gilt-text); text-decoration: none;
-  background: linear-gradient(160deg, rgb(255 255 255 / 0.12), rgb(0 0 0 / 0.24)), var(--c);
+  background: linear-gradient(160deg, rgb(0 0 0 / 0.22), rgb(0 0 0 / 0.40)), var(--c);
   box-shadow: 0 20px 40px -26px var(--c);
 }
 .label-inner {
@@ -183,7 +183,8 @@ a.label:hover { transform: translateY(-2px); }
 .cell-btn:hover { background: var(--hover); }
 .empty { margin: 0; padding: 14px 4px; color: var(--muted); }
 .cross {
-  justify-self: start; font-weight: 600; font-size: 0.92rem; color: var(--ink);
+  justify-self: start; display: inline-flex; align-items: center; min-height: 40px;
+  font-weight: 600; font-size: 0.92rem; color: var(--ink);
   text-decoration: underline; text-decoration-color: var(--gilt); text-decoration-thickness: 2px; text-underline-offset: 4px;
 }
 
@@ -191,7 +192,7 @@ a.label:hover { transform: translateY(-2px); }
 .back {
   justify-self: start; display: inline-flex; align-items: center; gap: 4px;
   color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.88rem;
-  padding: 6px 10px 6px 0;
+  padding: 6px 10px 6px 0; min-height: 40px;
 }
 .back:hover { color: var(--ink); }
 .detail-head { display: grid; gap: 14px; }
@@ -213,7 +214,7 @@ input, textarea {
   border: 1px solid var(--line); background: var(--card); border-radius: 8px;
   padding: 10px 12px; font-size: 1rem;
 }
-input:focus, textarea:focus { border-color: var(--focus); outline: none; box-shadow: 0 0 0 3px rgb(31 86 211 / 0.18); }
+input:focus, textarea:focus { border-color: var(--focus); outline: 2px solid var(--focus); outline-offset: 1px; box-shadow: 0 0 0 3px rgb(31 86 211 / 0.18); }
 textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
 .field.narrow { flex: 0 1 150px; }
 
@@ -256,12 +257,14 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
 /* Schmale Handys: Tabelle enger setzen, damit mehr Spalten ohne Wischen passen */
 @media (max-width: 480px) {
   .sheet { font-size: 0.84rem; }
-  .sheet.wide { min-width: 420px; }
+  .sheet.wide { min-width: 0; }
   .sheet th, .sheet td { padding: 6px 7px; }
   .sheet .rh { width: 30px; min-width: 30px; padding-inline: 2px; }
   .sheet .c-name { left: 30px; min-width: 128px; }
+  .sheet.wide .c-name { min-width: 110px; }
+  .sheet.wide .c-ep, .sheet.wide td.c-epoch { display: none; }
   .sheet td.c-status { min-width: 0; }
-  .cell-btn { min-width: 28px; height: 28px; padding: 0 6px; }
+  .cell-btn { min-width: 36px; height: 36px; padding: 0 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -475,7 +478,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
 
   function progressCell(e) {
     if (e.finished) return el("td", { class: "c-status done" }, icon("check", 14), " " + numDate(e.finished));
-    if (e.page && e.total) return el("td", { class: "c-status databar", style: { "--p": pct(e) + "%" } }, `${e.page} / ${e.total} · ${pct(e)} %`);
+    if (e.page && e.total) return el("td", { class: "c-status databar", style: { "--p": pct(e) + "%" } }, `${e.page}/${e.total} · ${pct(e)} %`);
     if (e.page) return el("td", { class: "c-status" }, `S. ${e.page}`);
     return el("td", { class: "c-status" }, "");
   }
@@ -486,7 +489,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
       el("thead", null, el("tr", null,
         el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
         el("th", { class: "c-name", scope: "col" }, "Buch"),
-        el("th", { scope: "col" }, "Epoche"),
+        el("th", { class: "c-ep", scope: "col" }, "Epoche"),
         el("th", { scope: "col" }, "Fortschritt"),
         el("th", { class: "num", scope: "col" }, "Gedanken"))),
       el("tbody", null, list.map((b, i) => {
