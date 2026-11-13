@@ -20,12 +20,14 @@
   --gilt-text: #F8E9B8;
   --danger: #C0322B;
   --focus: #1F56D3;
-  --ok: #0D7F57;
-  --tab-1: #1F56D3;
-  --tab-2: #A2307A;
-  --tab-3: #0D7F57;
-  --tab-4: #56607F;
-  --on-tab: #FFFFFF;
+  --ok: #096042;
+  --grid: #C8D1E3;
+  --head: #1F56D3;
+  --head-dark: #1846B0;
+  --head-text: #FFFFFF;
+  --band: #EAF0FB;
+  --rowhead: #EDEFF4;
+  --select: #096042;
   --font-display: "Bodoni Moda", "Bodoni 72", Didot, Georgia, serif;
   --font-ui: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
 }
@@ -33,12 +35,14 @@
   :root:not([data-theme="light"]) {
     --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
     --shelf: #3567DE; --shelf-hi: #5E8AF0; --shelf-back: #141930; --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
+    --grid: #2E3758; --head: #2B5BD0; --head-dark: #2149AE; --head-text: #FFFFFF; --band: #1A2140; --rowhead: #1B2036; --select: #4CC38A;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
   --shelf: #3567DE; --shelf-hi: #5E8AF0; --shelf-back: #141930; --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
+    --grid: #2E3758; --head: #2B5BD0; --head-dark: #2149AE; --head-text: #FFFFFF; --band: #1A2140; --rowhead: #1B2036; --select: #4CC38A;
   color-scheme: dark;
 }
 
@@ -88,7 +92,7 @@ button, input, select { font: inherit; color: inherit; }
   border-radius: 6px;
   padding: 10px;
   color: var(--gilt-text);
-  background: linear-gradient(160deg, rgb(0 0 0 / 0.22), rgb(0 0 0 / 0.40)), var(--c);
+  background: linear-gradient(160deg, rgb(0 0 0 / 0), rgb(0 0 0 / 0.2)), var(--c);
   box-shadow: 0 1px 0 rgb(0 0 0 / 0.06), 0 22px 44px -26px var(--c);
   transition: background-color 0.3s;
 }
@@ -244,75 +248,70 @@ section { min-width: 0; }
 .hint { margin: 10px 0 22px; font-size: 0.84rem; color: var(--muted); }
 .search { margin-bottom: 8px; }
 
-/* Verzeichnis: Reiter und Liste, Zeilen passen immer auf die Breite */
+/* Verzeichnis wie eine formatierte Excel-Tabelle: farbige Kopfzeile, Gitter, Zeilennummern, Streifen */
 .ico { display: inline-block; flex: none; vertical-align: -0.18em; }
-.tabs { display: flex; align-items: flex-end; gap: 4px; margin: 0; padding: 0; }
-.tab {
-  flex: 1 1 0; min-width: 0; min-height: 44px; padding: 8px 6px;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  border: 1px solid var(--line); border-bottom: 0; border-radius: 10px 10px 0 0;
-  background: var(--hover); color: var(--muted);
-  font-weight: 600; font-size: 0.88rem; line-height: 1.15; text-align: center;
-  cursor: pointer; hyphens: auto; overflow-wrap: break-word;
+.sheet-wrap {
+  /* relative: auch unsichtbare Beschriftungen bleiben im Scrollbereich und verbreitern die Seite nicht */
+  position: relative;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--grid); background: var(--card);
 }
-.tab[aria-selected="true"] { background: var(--t); border-color: var(--t); color: var(--on-tab); }
-.panel {
-  border: 1px solid var(--line); border-top: 3px solid var(--t);
-  border-radius: 0 0 10px 10px; background: var(--card); padding: 4px 14px 10px;
+.sheet {
+  border-collapse: separate; border-spacing: 0; width: 100%; min-width: 600px;
+  font-size: 0.9rem; line-height: 1.35;
 }
-.items { list-style: none; margin: 0; padding: 0; }
-.item {
-  display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 4px 12px;
-  align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line);
+.sheet tbody tr { --cell: var(--card); }
+.sheet tbody tr:nth-child(even) { --cell: var(--band); }
+.sheet th, .sheet td {
+  padding: 7px 10px; text-align: left; vertical-align: middle;
+  border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid);
+  background-color: var(--cell, var(--card));
 }
-.item.ro { grid-template-columns: 12px minmax(0, 1fr); }
-.items > .item:last-child { border-bottom: 0; }
-.item-spine {
-  width: 12px; align-self: stretch; min-height: 40px; border-radius: 2px 2px 1px 1px;
-  background: linear-gradient(90deg, rgb(0 0 0 / 0.25), rgb(255 255 255 / 0.15) 50%, rgb(0 0 0 / 0.25)), var(--c);
+.sheet tr > :last-child { border-right: 0; }
+.sheet tbody tr:last-child > * { border-bottom: 0; }
+.sheet thead th {
+  background-color: var(--head); color: var(--head-text); font-weight: 700; white-space: nowrap;
+  border-right-color: rgb(255 255 255 / 0.22); border-bottom: 0;
 }
-.item-main { min-width: 0; }
-.item-author { margin: 0 0 1px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted); overflow-wrap: anywhere; }
-.item-title { margin: 0; font-family: var(--font-display); font-style: italic; font-size: 1.1rem; line-height: 1.25; overflow-wrap: anywhere; }
-.item-meta { margin: 4px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; font-size: 0.82rem; color: var(--muted); }
-.item-meta .ep { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); }
-.item-meta .ep::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
-.item-meta .done { color: var(--ok); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
-.item-acts { display: flex; gap: 6px; }
-.icon-btn {
-  display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0;
-  border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); cursor: pointer;
+.sheet .rh {
+  position: sticky; left: 0; z-index: 1;
+  width: 40px; min-width: 40px; padding-inline: 4px; text-align: center;
+  font-weight: 500; font-size: 0.78rem; color: var(--muted); background-color: var(--rowhead);
+  font-variant-numeric: tabular-nums;
 }
-.icon-btn:hover { background: var(--hover); }
-.icon-btn.danger { color: var(--danger); }
-.item.sel { animation: sel 2.4s ease-out; }
-@keyframes sel { from { background: var(--hover); } to { background: transparent; } }
-.progress { height: 6px; margin-top: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
-.progress span { display: block; height: 100%; border-radius: inherit; background: var(--c); }
-.group-head {
-  margin: 16px 0 0; padding: 0 0 6px; display: flex; align-items: center; gap: 8px;
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--muted); border-bottom: 1px solid var(--line);
+.sheet thead .rh { background-color: var(--head-dark); color: var(--head-text); z-index: 2; }
+.sheet .c-name { position: sticky; left: 40px; z-index: 1; min-width: 180px; max-width: 260px; overflow-wrap: anywhere; }
+.sheet thead .c-name { z-index: 2; }
+.sheet td.c-epoch { background-color: color-mix(in srgb, var(--c) 24%, var(--cell)); font-weight: 600; }
+.sheet td.c-status { white-space: nowrap; min-width: 110px; }
+.sheet td.c-status.done { background-color: color-mix(in srgb, var(--ok) 20%, var(--cell)); color: var(--ok); font-weight: 700; }
+.sheet td.c-status.databar {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--c) 42%, transparent) var(--p), transparent var(--p));
 }
-.group-head .sq { width: 10px; height: 14px; border-radius: 2px; background: var(--c); flex: none; }
-.group-head .n { margin-left: auto; font-variant-numeric: tabular-nums; letter-spacing: 0; }
-.panel-empty { margin: 0; padding: 18px 0 12px; color: var(--muted); }
-/* Entfernen bestätigen: eigene Zeile über die ganze Breite */
-.confirm { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 10px; }
-.confirm-q { color: var(--danger); font-weight: 600; font-size: 0.9rem; }
-.confirm-btn {
-  min-height: 40px; min-width: 64px; padding: 0 16px; border: 1px solid var(--line); border-radius: 8px;
-  background: var(--card); color: var(--ink); font-weight: 600; cursor: pointer;
+.sheet .c-act { width: 1%; white-space: nowrap; }
+.sheet tr.sel > * { background-color: color-mix(in srgb, var(--select) 16%, var(--cell, var(--card))); }
+.sheet tr.sel { outline: 2px solid var(--select); outline-offset: -2px; }
+.sheet input {
+  width: 100%; min-width: 0; padding: 5px 6px; border-radius: 0;
+  border: 2px solid var(--select); background: var(--card); font-size: 0.9rem;
 }
-.confirm-btn:hover { background: var(--hover); }
-.confirm-btn.yes { color: var(--danger); border-color: var(--danger); }
-/* Bearbeiten: die Zeile wird zum kleinen Formular */
-.item.editing { display: block; border-left: 4px solid var(--c); padding-left: 10px; }
-.edit-fields { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.edit-fields .f-name { grid-column: 1 / -1; }
-.edit-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 12px; }
-.text-btn { min-height: 40px; padding: 0 8px; border: 0; background: none; color: var(--muted); font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
-@media (max-width: 400px) { .tab { font-size: 0.82rem; padding-inline: 4px; } .panel { padding-inline: 12px; } }
+.sheet input:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
+.sheet td.empty { color: var(--muted); padding: 18px 12px; }
+.sort {
+  all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; min-height: 36px;
+}
+.sort:focus-visible { outline: 2px solid var(--head-text); outline-offset: 2px; }
+.sort .arr { display: inline-flex; min-width: 14px; }
+.cell-btn {
+  display: inline-grid; place-items: center; min-width: 30px; height: 28px; padding: 0 8px;
+  border: 1px solid var(--grid); border-radius: 3px; background: var(--card); color: var(--ink);
+  font-size: 0.85rem; cursor: pointer;
+}
+.cell-btn + .cell-btn { margin-left: 4px; }
+.cell-btn:hover { background: var(--hover); }
+.cell-btn.danger { color: var(--danger); }
+.cell-btn.ok { background: var(--select); border-color: var(--select); color: var(--card); }
+.confirm-q { font-size: 0.82rem; color: var(--danger); margin-right: 6px; }
 .foot { margin: 18px 0 0; font-size: 0.82rem; color: var(--muted); }
 .notice { margin: 0; padding: 10px 14px; border-radius: 8px; background: var(--hover); font-size: 0.88rem; }
 
@@ -338,6 +337,16 @@ section { min-width: 0; }
   .add { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .add .f-name { grid-column: 1 / -1; }
   .add .btn { grid-column: 1 / -1; }
+}
+
+/* Schmale Handys: Tabelle enger setzen, damit mehr Spalten ohne Wischen passen */
+@media (max-width: 480px) {
+  .sheet { font-size: 0.84rem; min-width: 500px; }
+  .sheet th, .sheet td { padding: 6px 7px; }
+  .sheet .rh { width: 30px; min-width: 30px; padding-inline: 2px; }
+  .sheet .c-name { left: 30px; min-width: 128px; }
+  .sheet td.c-status { min-width: 0; }
+  .cell-btn { min-width: 36px; height: 36px; padding: 0 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -408,8 +417,12 @@ section { min-width: 0; }
       <label for="q" class="vh">Verzeichnis durchsuchen</label>
       <input id="q" type="search" placeholder="Suchen nach Name, Genre oder Epoche">
     </div>
-    <div class="tabs" role="tablist" aria-label="Verzeichnis ordnen" id="tabs"></div>
-    <div class="panel" role="tabpanel" id="panel"></div>
+    <div class="sheet-wrap">
+      <table class="sheet" aria-label="Verzeichnis der Bücher">
+        <thead><tr id="sheet-head"></tr></thead>
+        <tbody id="list"></tbody>
+      </table>
+    </div>
     <p class="foot" id="mode"></p>
   </section>
 </div>
@@ -421,14 +434,14 @@ section { min-width: 0; }
 
   // Farbe je Epoche: das Regal liest sich so von links nach rechts chronologisch.
   const EPOCHS = [
-    ["Antike", "#A9801A"], ["Mittelalter", "#6D5A1F"], ["Renaissance", "#4F8A2A"],
-    ["Barock", "#8C1F3A"], ["Aufklärung", "#2747C4"], ["Sturm und Drang", "#C2361F"],
-    ["Klassik", "#0F6E8C"], ["Romantik", "#C23A6B"], ["Biedermeier", "#8A5A2B"],
-    ["Vormärz", "#B4442A"], ["Realismus", "#0D7F57"], ["Naturalismus", "#C8641A"],
-    ["Fin de Siècle", "#8E2C8C"], ["Moderne", "#3A2F99"], ["Expressionismus", "#D23B2E"],
-    ["Exilliteratur", "#4F5D75"], ["Nachkriegsliteratur", "#566A2A"], ["Gegenwart", "#0A86A8"],
+    ["Antike", "#816111"], ["Mittelalter", "#6D5A1F"], ["Renaissance", "#407221"],
+    ["Barock", "#8C1F3A"], ["Aufklärung", "#2747C4"], ["Sturm und Drang", "#BC341E"],
+    ["Klassik", "#0F6E8C"], ["Romantik", "#B43563"], ["Biedermeier", "#8A5A2B"],
+    ["Vormärz", "#AF4229"], ["Realismus", "#0B744F"], ["Naturalismus", "#A14F13"],
+    ["Fin de Siècle", "#8E2C8C"], ["Moderne", "#3A2F99"], ["Expressionismus", "#BB3428"],
+    ["Exilliteratur", "#4F5D75"], ["Nachkriegsliteratur", "#566A2A"], ["Gegenwart", "#076F8B"],
   ];
-  const EXTRA = ["#7B3FA0", "#1F8A70", "#B83227", "#2E5EAA", "#A86C12", "#9B2C5E", "#2F7D32", "#5B4BB7"];
+  const EXTRA = ["#7B3FA0", "#18735D", "#B83227", "#2E5EAA", "#8E5B0D", "#9B2C5E", "#2B742E", "#5B4BB7"];
   const GENRES = ["Roman", "Novellen", "Erzählungen", "Memoiren", "Briefe", "Lyrik", "Drama", "Essays", "Märchen", "Satire", "Reisebericht", "Philosophie"];
 
   // Nur für die Offline-Kopie ohne Online-Speicher: die lesbaren Bände vom Regalfoto.
@@ -450,6 +463,8 @@ section { min-width: 0; }
     edit: ["M4 20h4L19 9a2.83 2.83 0 0 0-4-4L4 16v4z", "M13.5 6.5l4 4"],
     x: ["M6 6l12 12", "M18 6L6 18"],
     check: ["M5 12.5l4.5 4.5L19 7.5"],
+    up: ["M7 14l5-5 5 5"],
+    down: ["M7 10l5 5 5-5"],
     back: ["M15 6l-6 6 6 6"],
   };
   function icon(name, size) {
@@ -518,18 +533,13 @@ section { min-width: 0; }
   const byName = (a, b) => collator.compare(a.name, b.name);
   const byShelf = (a, b) => (epochOrder(a.epoch) - epochOrder(b.epoch)) || collator.compare(a.epoch || "", b.epoch || "") || byName(a, b);
 
-  // Reiter des Verzeichnisses: Schlüssel, Beschriftung, Farbe. Der gewählte Reiter wird nur als Bequemlichkeit gemerkt.
-  const TABS = [["alle", "Alle", "--tab-1"], ["genre", "Genre", "--tab-2"], ["epoche", "Epoche", "--tab-3"], ["status", "Status", "--tab-4"]];
-  const TAB_KEY = "was-lese-ich-heute.reiter";
-  const savedTab = () => { try { return localStorage.getItem(TAB_KEY) || "alle"; } catch (e) { return "alle"; } };
-
   const S = {
     mode: null, ready: false, slow: false, failed: false,
     books: [], today: null, canWrite: true,
     editing: null, draft: null, confirming: null,
     query: "", fGenre: "", fEpoch: "",
     drawing: false, justDrawn: false, lastPool: null,
-    tab: savedTab(),
+    sortKey: "name", sortDir: 1,
   };
   let db = null;
 
@@ -914,7 +924,7 @@ section { min-width: 0; }
     const b = S.books.find((x) => x.id === id);
     if (!b) return;
     if (S.query && !matches(b, S.query)) { S.query = ""; $("#q").value = ""; renderList(); }
-    for (const r of document.querySelectorAll("#panel .item")) {
+    for (const r of document.querySelectorAll("#list tr")) {
       r.classList.remove("sel");
       if (r.dataset.id === id) {
         r.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "center" });
@@ -929,139 +939,50 @@ section { min-width: 0; }
     return !n || norm(b.name).includes(n) || norm(b.genre).includes(n) || norm(b.epoch).includes(n);
   }
 
-  // ---------- Verzeichnis: Reiter und Liste ----------
-  // „Status“ erscheint, sobald das Lesetagebuch etwas zu einem Buch weiß.
-  const hasStatus = () => S.books.some((b) => J[b.id] && (J[b.id].finished || J[b.id].page));
-  const availableTabs = () => TABS.filter(([key]) => key !== "status" || hasStatus());
-  const currentTab = () => (availableTabs().some(([key]) => key === S.tab) ? S.tab : "alle");
+  // ---------- Verzeichnis als Tabelle ----------
+  const COLS = [["name", "Name"], ["genre", "Genre"], ["epoch", "Epoche"], ["status", "Status"]];
 
-  function selectTab(key, focus) {
-    S.tab = key;
-    try { localStorage.setItem(TAB_KEY, key); } catch (e) { /* nur eine Bequemlichkeit */ }
-    renderList();
-    if (focus) { const t = $("#tab-" + key); if (t) t.focus(); }
-  }
-  function renderTabs() {
-    const bar = $("#tabs");
-    const tabs = availableTabs();
-    const cur = currentTab();
-    // Die Leiste wird nur neu gebaut, wenn sich die Menge der Reiter ändert; sonst behält der Reiter seinen Fokus.
-    const sig = tabs.map((t) => t[0]).join();
-    if (bar.dataset.sig !== sig) {
-      bar.dataset.sig = sig;
-      bar.replaceChildren(...tabs.map(([key, text, token]) => el("button", {
-        type: "button", class: "tab", role: "tab", id: "tab-" + key, "aria-controls": "panel", "data-tab": key,
-        style: { "--t": `var(${token})` }, onclick: () => selectTab(key),
-      }, text)));
-    }
-    for (const t of bar.children) {
-      const on = t.dataset.tab === cur;
-      t.setAttribute("aria-selected", on ? "true" : "false");
-      t.tabIndex = on ? 0 : -1;
-    }
-    const panel = $("#panel");
-    panel.setAttribute("aria-labelledby", "tab-" + cur);
-    panel.style.setProperty("--t", `var(${TABS.find((t) => t[0] === cur)[2]})`);
-  }
-  $("#tabs").addEventListener("keydown", (ev) => {
-    const keys = availableTabs().map((t) => t[0]);
-    const i = keys.indexOf(currentTab());
-    let n = -1;
-    if (ev.key === "ArrowRight") n = (i + 1) % keys.length;
-    else if (ev.key === "ArrowLeft") n = (i - 1 + keys.length) % keys.length;
-    else if (ev.key === "Home") n = 0;
-    else if (ev.key === "End") n = keys.length - 1;
-    if (n < 0) return;
-    ev.preventDefault();
-    selectTab(keys[n], true);
-  });
-
-  // Gruppen für den gewählten Reiter; die Bücher kommen schon nach Name sortiert an.
-  function groupsFor(tab, list) {
-    if (tab === "alle") return [{ name: null, books: list }];
-    const map = new Map();
-    const add = (key, name, b, more) => {
-      if (!map.has(key)) map.set(key, Object.assign({ name, books: [] }, more));
-      map.get(key).books.push(b);
-    };
-    if (tab === "status") {
-      const names = ["Am Lesen", "Noch nicht angefangen", "Gelesen"];
-      for (const b of list) {
-        const e = J[b.id] || {};
-        const k = e.finished ? 2 : e.page ? 0 : 1;
-        add(k, names[k], b);
-      }
-      return [0, 1, 2].filter((k) => map.has(k)).map((k) => map.get(k));
-    }
-    const field = tab === "genre" ? "genre" : "epoch";
-    const none = tab === "genre" ? "Ohne Genre" : "Ohne Epoche";
-    for (const b of list) {
-      const name = clean(b[field]);
-      add(name.toLowerCase(), name || none, b, tab === "epoche" ? { color: color(name) } : null);
-    }
-    const byGroup = tab === "genre"
-      ? (a, b) => collator.compare(a.name, b.name)
-      : (a, b) => (epochOrder(a.name) - epochOrder(b.name)) || collator.compare(a.name, b.name);
-    return [...map.values()].sort((a, b) => (a.name === none) - (b.name === none) || byGroup(a, b));
-  }
-
-  function standOf(b) {
+  function statusRank(b) {
     const e = J[b.id];
-    if (!e) return { text: null, progress: null };
-    if (e.finished) {
-      const d = new Date(String(e.finished) + "T12:00:00");
-      return { text: el("span", { class: "done" }, icon("check", 14), "Gelesen am " + (isNaN(d) ? e.finished : d.toLocaleDateString("de-DE"))), progress: null };
-    }
-    if (!e.page) return { text: null, progress: null };
-    if (!e.total) return { text: `Bis Seite ${e.page}`, progress: null };
-    const p = Math.max(0, Math.min(100, Math.round((e.page / e.total) * 100)));
-    return {
-      text: `Seite ${e.page} von ${e.total}`,
-      progress: el("div", { class: "progress", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(p), "aria-label": "Fortschritt" },
-        el("span", { style: { width: p + "%" } })),
+    if (!e) return -1;
+    if (e.finished) return 1000;
+    if (e.page) return e.total ? (e.page / e.total) * 100 : 0.5;
+    return -1;
+  }
+  function sorter() {
+    const k = S.sortKey, d = S.sortDir;
+    return (a, b) => {
+      let r = 0;
+      if (k === "epoch") r = (epochOrder(a.epoch) - epochOrder(b.epoch)) || collator.compare(a.epoch || "", b.epoch || "");
+      else if (k === "genre") r = collator.compare(a.genre || "", b.genre || "");
+      else if (k === "status") r = statusRank(a) - statusRank(b);
+      return r * d || byName(a, b) * (k === "name" ? d : 1);
     };
   }
 
-  function itemEl(b, write) {
-    const { author, title } = splitName(b.name);
-    const stand = standOf(b);
-    let acts = null, confirm = null;
-    if (write && S.confirming === b.id) {
-      confirm = el("div", { class: "confirm" },
-        el("span", { class: "confirm-q" }, "Entfernen?"),
-        el("button", { class: "confirm-btn yes", type: "button", onclick: async () => {
-          S.confirming = null;
-          const removed = Object.assign({}, b);
-          const ok = await removeBook(b.id);
-          if (ok) notify(`„${title}“ ist aus dem Regal.`, "Rückgängig", async () => {
-            if (await restoreBook(removed)) notify(`„${title}“ steht wieder im Regal.`);
-            render();
-          });
-          render();
-        } }, "Ja"),
-        el("button", { class: "confirm-btn", type: "button", onclick: () => { S.confirming = null; renderList(); } }, "Nein"));
-    } else if (write) {
-      acts = el("div", { class: "item-acts" },
-        el("button", { class: "icon-btn", type: "button", title: "Bearbeiten", "aria-label": `${b.name} bearbeiten`,
-          onclick: () => { S.editing = b.id; S.draft = null; S.confirming = null; renderList(); const f = $("#ed-name"); if (f) f.focus(); } }, icon("edit", 18)),
-        el("button", { class: "icon-btn danger", type: "button", title: "Entfernen", "aria-label": `${b.name} entfernen`,
-          onclick: () => { S.confirming = b.id; S.editing = null; renderList(); } }, icon("x", 18)));
+  function renderHead(showStatus, write) {
+    const tr = $("#sheet-head");
+    tr.replaceChildren(el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")));
+    for (const [key, text] of COLS) {
+      if (key === "status" && !showStatus) continue;
+      const active = S.sortKey === key;
+      tr.append(el("th", {
+        scope: "col",
+        class: key === "name" ? "c-name" : null,
+        "aria-sort": active ? (S.sortDir > 0 ? "ascending" : "descending") : null,
+      }, el("button", {
+        class: "sort", type: "button",
+        onclick: () => {
+          if (S.sortKey === key) S.sortDir *= -1; else { S.sortKey = key; S.sortDir = 1; }
+          renderList();
+        },
+      }, text, el("span", { class: "arr", "aria-hidden": "true" }, active ? icon(S.sortDir > 0 ? "up" : "down", 14) : ""))));
     }
-    return el("li", { class: "item" + (write ? "" : " ro"), "data-id": b.id, style: { "--c": color(b.epoch) } },
-      el("span", { class: "item-spine", "aria-hidden": "true" }),
-      el("div", { class: "item-main" },
-        author ? el("p", { class: "item-author" }, author) : null,
-        el("p", { class: "item-title" }, title),
-        el("p", { class: "item-meta" },
-          el("span", null, b.genre || "Ohne Genre"),
-          el("span", { class: "ep" }, b.epoch || "Ohne Epoche"),
-          stand.text),
-        stand.progress),
-      acts, confirm);
+    if (write) tr.append(el("th", { scope: "col" }, el("span", { class: "vh" }, "Ändern")));
   }
 
   function renderList() {
-    const panel = $("#panel");
+    const list = $("#list");
     // Was gerade in der bearbeiteten Zeile steht, übersteht ein Neuzeichnen.
     let refocus = null;
     if (S.editing) {
@@ -1071,28 +992,54 @@ section { min-width: 0; }
       const a = document.activeElement;
       if (a && /^ed-/.test(a.id)) refocus = { id: a.id, start: a.selectionStart, end: a.selectionEnd };
     }
+    list.replaceChildren();
     const write = S.canWrite;
     $("#add").hidden = !write;
     $("#hint").hidden = !write;
     $("#readonly").hidden = write || !S.ready;
-    renderTabs();
-    panel.replaceChildren();
-    const message = (text) => panel.append(el("p", { class: "panel-empty" }, text));
+
+    // Die Spalte „Status“ erscheint, sobald das Lesetagebuch etwas zu einem Buch weiß.
+    const showStatus = S.books.some((b) => J[b.id] && (J[b.id].finished || J[b.id].page));
+    renderHead(showStatus, write);
+    const span = String(4 + (showStatus ? 1 : 0) + (write ? 1 : 0));
+    const message = (text) => list.append(el("tr", null, el("td", { class: "empty", colspan: span }, text)));
     if (!S.ready) return message("Wird geladen …");
     if (!S.books.length) return message("Das Verzeichnis ist noch leer.");
-    const found = S.books.filter((b) => matches(b, S.query)).sort(byName);
-    if (!found.length) return message(`Nichts gefunden für „${S.query}“.`);
+    const rows = S.books.filter((b) => matches(b, S.query)).sort(sorter());
+    if (!rows.length) return message(`Nichts gefunden für „${S.query}“.`);
 
-    for (const g of groupsFor(currentTab(), found)) {
-      if (g.name != null) {
-        panel.append(el("h3", { class: "group-head", style: g.color ? { "--c": g.color } : null },
-          g.color ? el("span", { class: "sq", "aria-hidden": "true" }) : null,
-          el("span", null, g.name),
-          el("span", { class: "n" }, String(g.books.length))));
+    rows.forEach((b, i) => {
+      const c = color(b.epoch);
+      if (S.editing === b.id && write) { list.append(editRow(b, c, i + 1, showStatus)); return; }
+      const { title } = splitName(b.name);
+      let actions = null;
+      if (write) {
+        actions = el("td", { class: "c-act" }, S.confirming === b.id
+          ? [el("span", { class: "confirm-q" }, "Entfernen?"),
+             el("button", { class: "cell-btn danger", type: "button", onclick: async () => {
+               S.confirming = null;
+               const removed = Object.assign({}, b);
+               const ok = await removeBook(b.id);
+               if (ok) notify(`„${title}“ ist aus dem Regal.`, "Rückgängig", async () => {
+                 if (await restoreBook(removed)) notify(`„${title}“ steht wieder im Regal.`);
+                 render();
+               });
+               render();
+             } }, "Ja"),
+             el("button", { class: "cell-btn", type: "button", onclick: () => { S.confirming = null; renderList(); } }, "Nein")]
+          : [el("button", { class: "cell-btn", type: "button", title: "Bearbeiten", "aria-label": `${b.name} bearbeiten`,
+               onclick: () => { S.editing = b.id; S.draft = null; S.confirming = null; renderList(); const f = $("#ed-name"); if (f) f.focus(); } }, icon("edit", 15)),
+             el("button", { class: "cell-btn danger", type: "button", title: "Entfernen", "aria-label": `${b.name} entfernen`,
+               onclick: () => { S.confirming = b.id; S.editing = null; renderList(); } }, icon("x", 15))]);
       }
-      panel.append(el("ul", { class: "items" },
-        g.books.map((b) => (S.editing === b.id && write ? editItem(b) : itemEl(b, write)))));
-    }
+      list.append(el("tr", { "data-id": b.id, style: { "--c": c } },
+        el("th", { class: "rh", scope: "row" }, String(i + 1)),
+        el("td", { class: "c-name" }, b.name),
+        el("td", null, b.genre || ""),
+        el("td", { class: "c-epoch" }, b.epoch || ""),
+        showStatus ? statusCell(b) : null,
+        actions));
+    });
     const f = refocus && document.getElementById(refocus.id);
     if (f) {
       f.focus();
@@ -1100,7 +1047,21 @@ section { min-width: 0; }
     }
   }
 
-  function editItem(b) {
+  function statusCell(b) {
+    const e = J[b.id];
+    if (!e || (!e.finished && !e.page)) return el("td", { class: "c-status" }, "");
+    if (e.finished) {
+      const d = new Date(String(e.finished) + "T12:00:00");
+      return el("td", { class: "c-status done", title: "Gelesen" }, icon("check", 14), " " + (isNaN(d) ? e.finished : d.toLocaleDateString("de-DE")));
+    }
+    if (e.total) {
+      const p = Math.max(0, Math.min(100, Math.round((e.page / e.total) * 100)));
+      return el("td", { class: "c-status databar", style: { "--p": p + "%" }, title: p + " % gelesen" }, `${e.page} / ${e.total}`);
+    }
+    return el("td", { class: "c-status" }, `S. ${e.page}`);
+  }
+
+  function editRow(b, c, n, showStatus) {
     const d = S.draft || { name: b.name, genre: b.genre || "", epoch: b.epoch || "" };
     const keepDraft = () => { S.draft = { name: $("#ed-name").value, genre: $("#ed-genre").value, epoch: $("#ed-epoch").value }; };
     const cancel = () => { S.editing = null; S.draft = null; renderList(); };
@@ -1117,17 +1078,18 @@ section { min-width: 0; }
       if (ev.key === "Enter") { ev.preventDefault(); save(); }
       else if (ev.key === "Escape") { ev.preventDefault(); cancel(); }
     };
-    const field = (cls, id, label, value, extra) => el("div", { class: "field " + cls },
-      el("label", { for: id }, label),
-      el("input", Object.assign({ id, value, maxlength: id === "ed-name" ? "160" : "60", oninput: keepDraft, onkeydown: keys }, extra || {})));
-    return el("li", { class: "item editing", "data-id": b.id, style: { "--c": color(b.epoch) } },
-      el("div", { class: "edit-fields" },
-        field("f-name", "ed-name", "Name", d.name),
-        field("", "ed-genre", "Genre", d.genre, { list: "dl-genre" }),
-        field("", "ed-epoch", "Epoche", d.epoch, { list: "dl-epoch" })),
-      el("div", { class: "edit-acts" },
-        el("button", { class: "btn", type: "button", onclick: save }, "Speichern"),
-        el("button", { class: "text-btn", type: "button", onclick: cancel }, "Abbrechen")));
+    const input = (id, label, value, extra) => el("input", Object.assign({
+      id, "aria-label": label, value, maxlength: id === "ed-name" ? "160" : "60", oninput: keepDraft, onkeydown: keys,
+    }, extra || {}));
+    return el("tr", { class: "editing", "data-id": b.id, style: { "--c": c } },
+      el("th", { class: "rh", scope: "row" }, String(n)),
+      el("td", { class: "c-name" }, input("ed-name", "Name", d.name)),
+      el("td", null, input("ed-genre", "Genre", d.genre, { list: "dl-genre" })),
+      el("td", { class: "c-epoch" }, input("ed-epoch", "Epoche", d.epoch, { list: "dl-epoch" })),
+      showStatus ? statusCell(b) : null,
+      el("td", { class: "c-act" },
+        el("button", { class: "cell-btn ok", type: "button", title: "Speichern", "aria-label": "Speichern", onclick: save }, icon("check", 15)),
+        el("button", { class: "cell-btn", type: "button", title: "Abbrechen", "aria-label": "Abbrechen", onclick: cancel }, icon("x", 15))));
   }
 
   function renderMode() {
