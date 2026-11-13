@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "BriefverwaltungHandy"
-include(":app")
+rootProject.name = "WasLeseIchHeute"
+include(":gemeinsam", ":heute", ":tagebuch")

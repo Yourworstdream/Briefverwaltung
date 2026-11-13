@@ -1,0 +1,57 @@
+name: Handy-Apps
+
+# Baut die beiden Android-Apps (APKs) und legt sie bei jedem Push als Download unter
+# https://github.com/<besitzer>/<repo>/releases/tag/app bereit.
+on:
+  push:
+    paths: ["index.html", "tagebuch.html", "android/**", ".github/workflows/apk.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Zwei Läufe dürfen das Release nicht gleichzeitig löschen und neu anlegen.
+concurrency:
+  group: apk-release
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: APKs bauen
+        working-directory: android
+        run: ./gradlew :heute:assembleRelease :tagebuch:assembleRelease --no-daemon
+
+      - name: APKs bereitlegen
+        run: |
+          cp android/heute/build/outputs/apk/release/heute-release.apk Was-lese-ich-heute.apk
+          cp android/tagebuch/build/outputs/apk/release/tagebuch-release.apk Lesetagebuch.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Apps
+          path: |
+            Was-lese-ich-heute.apk
+            Lesetagebuch.apk
+
+      - name: Als Download veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete app --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+          gh release create app Was-lese-ich-heute.apk Lesetagebuch.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Handy-Apps (neueste Version)" \
+            --notes "Zwei Apps, die zusammenarbeiten: Was lese ich heute? und Lesetagebuch. Beide auf dem Handy herunterladen und installieren (Installation aus unbekannten Quellen erlauben). Version 1.0.${GITHUB_RUN_NUMBER}, erstellt aus ${GITHUB_SHA::7}."

@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lesetagebuch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: wie „Was lese ich heute?“ – eine ruhige Spalte, Farbe nur am Buch selbst. Liste aller Bücher, dann pro Buch Seiten, Gedanken, Zusammenfassung. */
+:root {
+  --paper: #F3F5FA;
+  --card: #FFFFFF;
+  --ink: #141A33;
+  --muted: #5B6382;
+  --line: #DDE2EE;
+  --hover: #E9EDF6;
+  --gilt: #D4A73F;
+  --gilt-text: #F8E9B8;
+  --danger: #C0322B;
+  --focus: #1F56D3;
+  --ok: #096042;
+  --grid: #C8D1E3;
+  --head: #1F56D3;
+  --head-dark: #1846B0;
+  --head-text: #FFFFFF;
+  --band: #EAF0FB;
+  --rowhead: #EDEFF4;
+  --select: #096042;
+  --grey-head: #5B6382;
+  --ok-head: #096042;
+  --font-display: "Bodoni Moda", "Bodoni 72", Didot, Georgia, serif;
+  --font-ui: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
+    --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
+    --grid: #2E3758; --head: #2B5BD0; --head-dark: #2149AE; --head-text: #FFFFFF; --band: #1A2140; --rowhead: #1B2036; --select: #4CC38A; --grey-head: #46506F; --ok-head: #0F6B4B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
+  --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
+    --grid: #2E3758; --head: #2B5BD0; --head-dark: #2149AE; --head-text: #FFFFFF; --band: #1A2140; --rowhead: #1B2036; --select: #4CC38A; --grey-head: #46506F; --ok-head: #0F6B4B;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 80px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 36px;
+}
+main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; min-width: 0; }
+
+.top {
+  display: flex; justify-content: space-between; align-items: baseline;
+  flex-wrap: wrap; gap: 6px 16px;
+  padding-bottom: 14px; border-bottom: 1px solid var(--line);
+}
+.mark { margin: 0; font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: 1.3rem; letter-spacing: -0.01em; }
+.date { margin: 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+
+h2, .eyebrow {
+  margin: 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);
+}
+section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
+
+/* Etikett wie auf dem Buchrücken */
+.label {
+  --c: #2747C4;
+  position: relative; display: block;
+  border-radius: 6px; padding: 9px;
+  color: var(--gilt-text); text-decoration: none;
+  background: linear-gradient(160deg, rgb(0 0 0 / 0), rgb(0 0 0 / 0.2)), var(--c);
+  box-shadow: 0 20px 40px -26px var(--c);
+}
+.label-inner {
+  position: relative; border: 1px solid var(--gilt);
+  padding: clamp(18px, 4.5vw, 34px) clamp(56px, 9vw, 90px) clamp(18px, 4.5vw, 30px) clamp(18px, 4.5vw, 36px);
+}
+.label-inner::before { content: ""; position: absolute; inset: 5px; border: 1px solid var(--gilt); opacity: 0.55; pointer-events: none; }
+.ribbon {
+  position: absolute; top: -10px; right: clamp(22px, 5vw, 40px);
+  width: 15px; height: 64px; background: var(--gilt);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+}
+.l-author { margin: 0 0 4px; font-family: var(--font-display); font-weight: 600; font-size: 0.86rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.l-title { margin: 0; font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: clamp(1.9rem, 6.5vw, 3.1rem); line-height: 1.04; text-wrap: balance; overflow-wrap: anywhere; }
+.label.small .l-title { font-size: clamp(1.5rem, 5vw, 2.1rem); }
+.orn { display: flex; align-items: center; gap: 9px; margin: 14px 0 10px; color: var(--gilt); }
+.orn::before, .orn::after { content: ""; height: 1px; width: 40px; background: currentColor; }
+.orn i { width: 7px; height: 7px; border: 1px solid currentColor; transform: rotate(45deg); }
+.l-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+.l-meta .sep { opacity: 0.6; }
+.label.small .l-meta { margin-top: 10px; letter-spacing: 0.06em; text-transform: none; font-size: 0.86rem; }
+a.label { transition: transform 0.15s; }
+a.label:hover { transform: translateY(-2px); }
+
+/* Bücherlisten */
+/* Listen wie formatierte Excel-Tabellen: farbige Kopfzeile, Gitter, Zeilennummern, Streifen, Datenbalken */
+.ico { display: inline-block; flex: none; vertical-align: -0.18em; }
+/* relative: auch unsichtbare Beschriftungen bleiben im Scrollbereich und verbreitern die Seite nicht */
+.sheet-wrap { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--grid); background: var(--card); }
+.sheet {
+  border-collapse: separate; border-spacing: 0; width: 100%;
+  font-size: 0.9rem; line-height: 1.35;
+}
+.sheet.wide { min-width: 520px; }
+.sheet tbody tr { --cell: var(--card); }
+.sheet tbody tr:nth-child(even) { --cell: var(--band); }
+.sheet th, .sheet td {
+  padding: 7px 10px; text-align: left; vertical-align: middle;
+  border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid);
+  background-color: var(--cell, var(--card));
+}
+.sheet tr > :last-child { border-right: 0; }
+.sheet tbody tr:last-child > * { border-bottom: 0; }
+.sheet thead th {
+  background-color: var(--head); color: var(--head-text); font-weight: 700; white-space: nowrap;
+  border-right-color: rgb(255 255 255 / 0.22); border-bottom: 0;
+}
+.sheet .rh {
+  position: sticky; left: 0; z-index: 1;
+  width: 40px; min-width: 40px; padding-inline: 4px; text-align: center;
+  font-weight: 500; font-size: 0.78rem; color: var(--muted); background-color: var(--rowhead);
+  font-variant-numeric: tabular-nums;
+}
+.sheet thead .rh { background-color: var(--head-dark); color: var(--head-text); z-index: 2; }
+.sheet .c-name { position: sticky; left: 40px; z-index: 1; min-width: 170px; max-width: 250px; overflow-wrap: anywhere; }
+.sheet thead .c-name { z-index: 2; }
+.sheet .num { text-align: right; font-variant-numeric: tabular-nums; }
+.sheet td.date { white-space: nowrap; color: var(--muted); }
+.sheet td.c-epoch { background-color: color-mix(in srgb, var(--c) 24%, var(--cell)); font-weight: 600; }
+.sheet td.c-status { white-space: nowrap; min-width: 120px; }
+.sheet td.c-status.done { background-color: color-mix(in srgb, var(--ok) 20%, var(--cell)); color: var(--ok); font-weight: 700; }
+.sheet td.c-status.databar {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--c) 42%, transparent) var(--p), transparent var(--p));
+}
+.sheet td.plus { font-weight: 700; color: var(--ok); }
+.sheet td.text { overflow-wrap: anywhere; white-space: pre-wrap; }
+.sheet td.del { width: 1%; padding: 4px 6px; }
+.sheet tfoot th, .sheet tfoot td {
+  font-weight: 700; background-color: var(--card); border-top: 3px double var(--grid); border-bottom: 0;
+}
+.sheet tbody tr.click { cursor: pointer; }
+.sheet tbody tr.click:hover > * { background-color: color-mix(in srgb, var(--select) 10%, var(--cell)); }
+.sheet a.cell-link { color: inherit; text-decoration: none; font-weight: 600; }
+.sheet a.cell-link:hover { text-decoration: underline; }
+.sheet.grp-neu thead th { background-color: var(--grey-head); }
+.sheet.grp-fertig thead th { background-color: var(--ok-head); }
+.sheet.colored thead th { background-color: var(--c); }
+.sheet.colored thead .rh { background-color: color-mix(in srgb, var(--c) 78%, black); }
+.sheet.colored tbody tr:nth-child(even) { --cell: color-mix(in srgb, var(--c) 9%, var(--card)); }
+.cell-btn {
+  display: inline-grid; place-items: center; min-width: 30px; height: 28px; padding: 0 8px;
+  border: 1px solid var(--grid); border-radius: 3px; background: var(--card); color: var(--danger);
+  font-size: 0.85rem; cursor: pointer;
+}
+.cell-btn:hover { background: var(--hover); }
+.empty { margin: 0; padding: 14px 4px; color: var(--muted); }
+.cross {
+  justify-self: start; display: inline-flex; align-items: center; min-height: 40px;
+  font-weight: 600; font-size: 0.92rem; color: var(--ink);
+  text-decoration: underline; text-decoration-color: var(--gilt); text-decoration-thickness: 2px; text-underline-offset: 4px;
+}
+
+/* Einzelnes Buch */
+.back {
+  justify-self: start; display: inline-flex; align-items: center; gap: 4px;
+  color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.88rem;
+  padding: 6px 10px 6px 0; min-height: 40px;
+}
+.back:hover { color: var(--ink); }
+.detail-head { display: grid; gap: 14px; }
+
+.prog { display: grid; gap: 8px; }
+.prog-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.big { margin: 0; font-size: 0.95rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.big b { font-family: var(--font-display); font-size: 2.3rem; font-weight: 600; color: var(--ink); line-height: 1; margin-right: 4px; }
+.pct { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bar { height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--c); border-radius: inherit; transition: width 0.4s ease; }
+.stats { margin: 0; font-size: 0.84rem; color: var(--muted); }
+
+.inline-form { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
+.field { display: grid; gap: 5px; flex: 1 1 160px; min-width: 0; }
+.field label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+input, textarea {
+  width: 100%; min-width: 0;
+  border: 1px solid var(--line); background: var(--card); border-radius: 8px;
+  padding: 10px 12px; font-size: 1rem;
+}
+input:focus, textarea:focus { border-color: var(--focus); outline: 2px solid var(--focus); outline-offset: 1px; box-shadow: 0 0 0 3px rgb(31 86 211 / 0.18); }
+textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
+.field.narrow { flex: 0 1 150px; }
+
+.btn {
+  border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
+  border-radius: 999px; padding: 10px 18px; font-weight: 600; font-size: 0.92rem; cursor: pointer;
+  transition: transform 0.12s;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn.go { animation: nudge 1.2s ease-in-out 2; }
+@keyframes nudge { 50% { transform: scale(1.05); } }
+.link {
+  background: none; border: 0; padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  font-size: 0.85rem; font-weight: 500; color: var(--muted);
+}
+.link:hover { color: var(--ink); background: var(--hover); }
+
+.log-more { justify-self: start; }
+
+.saved { margin: 0; font-size: 0.8rem; color: var(--muted); min-height: 1.2em; }
+.finish { padding: 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.finish p { margin: 0; }
+.hint { font-size: 0.86rem; color: var(--muted); }
+.done-line { font-weight: 700; color: var(--ok); }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+  display: flex; align-items: center; gap: 12px;
+  background: var(--ink); color: var(--paper);
+  padding: 9px 10px 9px 18px; border-radius: 999px; font-size: 0.88rem;
+  max-width: calc(100% - 32px); width: max-content;
+  transition: opacity 0.2s, transform 0.2s; z-index: 20;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.has-act.show { pointer-events: auto; }
+.toast button { background: none; border: 0; color: var(--gilt); font-weight: 700; cursor: pointer; padding: 4px 8px; }
+.toast:not(.has-act) { padding-right: 18px; }
+
+/* Schmale Handys: Tabelle enger setzen, damit mehr Spalten ohne Wischen passen */
+@media (max-width: 480px) {
+  .sheet { font-size: 0.84rem; }
+  .sheet.wide { min-width: 0; }
+  .sheet th, .sheet td { padding: 6px 7px; }
+  .sheet .rh { width: 30px; min-width: 30px; padding-inline: 2px; }
+  .sheet .c-name { left: 30px; min-width: 128px; }
+  .sheet.wide .c-name { min-width: 110px; }
+  .sheet.wide .c-ep, .sheet.wide td.c-epoch { display: none; }
+  .sheet td.c-status { min-width: 0; }
+  .cell-btn { min-width: 36px; height: 36px; padding: 0 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 class="mark">Lesetagebuch</h1>
+    <p class="date" id="date"></p>
+  </header>
+  <main id="view"></main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button type="button" id="toast-act" hidden></button></div>
+
+<script>
+(() => {
+  "use strict";
+
+  // Gleiche Farben und gleiche Auswahl des Tages wie in „Was lese ich heute?“ (index.html).
+  const EPOCHS = [
+    ["Antike", "#816111"], ["Mittelalter", "#6D5A1F"], ["Renaissance", "#407221"],
+    ["Barock", "#8C1F3A"], ["Aufklärung", "#2747C4"], ["Sturm und Drang", "#BC341E"],
+    ["Klassik", "#0F6E8C"], ["Romantik", "#B43563"], ["Biedermeier", "#8A5A2B"],
+    ["Vormärz", "#AF4229"], ["Realismus", "#0B744F"], ["Naturalismus", "#A14F13"],
+    ["Fin de Siècle", "#8E2C8C"], ["Moderne", "#3A2F99"], ["Expressionismus", "#BB3428"],
+    ["Exilliteratur", "#4F5D75"], ["Nachkriegsliteratur", "#566A2A"], ["Gegenwart", "#076F8B"],
+  ];
+  const EXTRA = ["#7B3FA0", "#18735D", "#B83227", "#2E5EAA", "#8E5B0D", "#9B2C5E", "#2B742E", "#5B4BB7"];
+
+  // Die Bücher gehören „Was lese ich heute?“; das Tagebuch liest sie nur.
+  const SHELF_KEY = "was-lese-ich-heute.v1";
+  // Gedanken, Zusammenfassung, Seiten und „fertig gelesen“ stehen hier.
+  const JOURNAL_KEY = "was-lese-ich-heute.tagebuch.v1";
+  // In der Android-App verbindet window.Bruecke dieses Tagebuch mit der App „Was lese ich heute?“.
+  // Die Android-Apps tauschen nur still Daten aus; Links auf die andere Seite gibt es nur im Browser.
+  const BRIDGE = typeof window.Bruecke !== "undefined" ? window.Bruecke : null;
+
+  const $ = (s) => document.querySelector(s);
+  const reduced = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Schlichte Linien-Symbole statt Schriftzeichen: überall gleich scharf, folgen der Textfarbe.
+  const ICONS = {
+    edit: ["M4 20h4L19 9a2.83 2.83 0 0 0-4-4L4 16v4z", "M13.5 6.5l4 4"],
+    x: ["M6 6l12 12", "M18 6L6 18"],
+    check: ["M5 12.5l4.5 4.5L19 7.5"],
+    up: ["M7 14l5-5 5 5"],
+    down: ["M7 10l5 5 5-5"],
+    back: ["M15 6l-6 6 6 6"],
+  };
+  function icon(name, size) {
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg");
+    const attrs = { viewBox: "0 0 24 24", width: size || 16, height: size || 16, fill: "none", stroke: "currentColor",
+      "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true", class: "ico" };
+    for (const [k, v] of Object.entries(attrs)) svg.setAttribute(k, String(v));
+    for (const d of ICONS[name]) {
+      const path = document.createElementNS(NS, "path");
+      path.setAttribute("d", d);
+      svg.append(path);
+    }
+    return svg;
+  }
+
+  function el(tag, props, ...kids) {
+    const n = document.createElement(tag);
+    if (props) for (const [k, v] of Object.entries(props)) {
+      if (v == null || v === false) continue;
+      if (k === "class") n.className = v;
+      else if (k === "style") for (const [sk, sv] of Object.entries(v)) n.style.setProperty(sk, sv);
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else if (k === "value") n.value = v;
+      else n.setAttribute(k, v === true ? "" : v);
+    }
+    for (const c of kids.flat()) if (c != null && c !== false) n.append(c instanceof Node ? c : document.createTextNode(String(c)));
+    return n;
+  }
+  function hash(s) {
+    let h = 2166136261;
+    for (const ch of String(s)) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function norm(s) {
+    return String(s || "").toLowerCase()
+      .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+      .normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "");
+  }
+  const EPOCH_COLORS = new Map(EPOCHS.map(([n, c]) => [norm(n), c]));
+  function color(epoch) {
+    const k = norm(epoch);
+    if (!k) return "#5B6382";
+    return EPOCH_COLORS.get(k) || EXTRA[hash(k) % EXTRA.length];
+  }
+  function splitName(name) {
+    const parts = String(name || "").split(/\s+[–—-]\s+/);
+    if (parts.length > 1) return { author: parts[0].trim(), title: parts.slice(1).join(" – ").trim() };
+    return { author: "", title: String(name || "").trim() };
+  }
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function asDate(d) { return new Date(String(d) + "T12:00:00"); }
+  function longDate(d) { return asDate(d).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" }); }
+  function numDate(d) { const t = asDate(d); return isNaN(t) ? String(d) : t.toLocaleDateString("de-DE"); }
+  function shortDate(d) { return asDate(d).toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }); }
+  const collator = new Intl.Collator("de", { sensitivity: "base", numeric: true });
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+  // ---------- Speicher ----------
+  let memory = { v: 1, books: {} };
+  function readShelf() {
+    try {
+      const raw = BRIDGE ? BRIDGE.lesen() : localStorage.getItem(SHELF_KEY);
+      const d = JSON.parse(raw || "null");
+      if (d && Array.isArray(d.books)) return { books: d.books, today: d.today || null, legacy: d.altesTagebuch || null };
+    } catch (e) { /* nicht lesbar */ }
+    return null;
+  }
+  // Die eigenen Einträge für „Was lese ich heute?“ bereitstellen (fertig gelesen, Seiten).
+  function share() {
+    if (!BRIDGE) return;
+    try { BRIDGE.teilen(JSON.stringify(memory)); } catch (e) { /* Teilen fehlgeschlagen */ }
+  }
+  function readJournal() {
+    try {
+      const d = JSON.parse(localStorage.getItem(JOURNAL_KEY) || "null");
+      if (d && d.books && typeof d.books === "object") memory = d;
+    } catch (e) { /* Speicher gesperrt: mit dem Stand im Speicher weiterarbeiten */ }
+    return memory;
+  }
+  // Immer frisch lesen, ändern, schreiben: so überschreibt keine App die andere.
+  function change(id, fn) {
+    const data = readJournal();
+    const entry = data.books[id] || (data.books[id] = {});
+    fn(entry);
+    entry.updated = Date.now();
+    memory = data;
+    try {
+      localStorage.setItem(JOURNAL_KEY, JSON.stringify(data));
+      share();
+      return true;
+    } catch (e) {
+      notify("Speichern hat nicht geklappt. Der Speicher des Geräts ist voll oder gesperrt.");
+      return false;
+    }
+  }
+
+  let shelf = null;
+  let J = {};
+  function load() {
+    shelf = readShelf();
+    J = readJournal().books;
+  }
+  const entry = (id) => J[id] || {};
+  const isDone = (b) => !!entry(b.id).finished;
+  function todaysBook() {
+    if (!shelf) return null;
+    const open = shelf.books.filter((b) => !isDone(b));
+    if (!open.length) return null;
+    const k = todayKey();
+    if (shelf.today && shelf.today.date === k) {
+      const b = open.find((x) => x.id === shelf.today.bookId);
+      if (b) return b;
+    }
+    // Jedes Buch hat seinen eigenen Rang für den Tag: die Wahl springt nicht, wenn ein anderes Buch wegfällt.
+    const rank = (b) => hash("tag:" + k + ":" + b.id);
+    return open.reduce((best, b) => {
+      const rb = rank(b), rs = rank(best);
+      return rb < rs || (rb === rs && b.id < best.id) ? b : best;
+    });
+  }
+  function started(e) {
+    return !!(e.page || (e.notes && e.notes.length) || (e.summary && e.summary.trim()));
+  }
+
+  // ---------- Bausteine ----------
+  function label(b, opts) {
+    const { author, title } = splitName(b.name);
+    const e = entry(b.id);
+    const kids = [
+      el("span", { class: "ribbon", "aria-hidden": "true" }),
+      el("div", { class: "label-inner" },
+        author ? el("p", { class: "l-author" }, author) : null,
+        el("p", { class: "l-title" }, title),
+        opts.small
+          ? el("p", { class: "l-meta" }, progressText(e) || "Noch nichts eingetragen")
+          : [el("div", { class: "orn", "aria-hidden": "true" }, el("i")),
+             el("p", { class: "l-meta" },
+               el("span", null, b.genre || "Ohne Genre"),
+               el("span", { class: "sep", "aria-hidden": "true" }, "·"),
+               el("span", null, b.epoch || "Ohne Epoche"))]),
+    ];
+    const props = { class: "label" + (opts.small ? " small" : ""), style: { "--c": color(b.epoch) } };
+    if (opts.href) { props.href = opts.href; return el("a", props, kids); }
+    return el("article", props, kids);
+  }
+  function progressText(e) {
+    const bits = [];
+    if (e.page) bits.push(e.total ? `Seite ${e.page} von ${e.total}` : `Bis Seite ${e.page}`);
+    const n = (e.notes || []).length;
+    if (n) bits.push(plural(n, "Gedanke", "Gedanken"));
+    return bits.join(" · ");
+  }
+  function pct(e) {
+    if (!e.total || !e.page) return 0;
+    return Math.max(0, Math.min(100, Math.round((e.page / e.total) * 100)));
+  }
+
+  function progressCell(e) {
+    if (e.finished) return el("td", { class: "c-status done" }, icon("check", 14), " " + numDate(e.finished));
+    if (e.page && e.total) return el("td", { class: "c-status databar", style: { "--p": pct(e) + "%" } }, `${e.page}/${e.total} · ${pct(e)} %`);
+    if (e.page) return el("td", { class: "c-status" }, `S. ${e.page}`);
+    return el("td", { class: "c-status" }, "");
+  }
+
+  function bookTable(list, group) {
+    const open = (b) => { location.hash = "#buch-" + encodeURIComponent(b.id); };
+    return el("div", { class: "sheet-wrap" }, el("table", { class: "sheet wide " + group },
+      el("thead", null, el("tr", null,
+        el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
+        el("th", { class: "c-name", scope: "col" }, "Buch"),
+        el("th", { class: "c-ep", scope: "col" }, "Epoche"),
+        el("th", { scope: "col" }, "Fortschritt"),
+        el("th", { class: "num", scope: "col" }, "Gedanken"))),
+      el("tbody", null, list.map((b, i) => {
+        const e = entry(b.id);
+        const n = (e.notes || []).length;
+        return el("tr", { class: "click", style: { "--c": color(b.epoch) }, onclick: (ev) => { if (ev.target.tagName !== "A") open(b); } },
+          el("th", { class: "rh", scope: "row" }, String(i + 1)),
+          el("td", { class: "c-name" }, el("a", { class: "cell-link", href: "#buch-" + encodeURIComponent(b.id) }, b.name)),
+          el("td", { class: "c-epoch" }, b.epoch || ""),
+          progressCell(e),
+          el("td", { class: "num" }, n ? String(n) : ""));
+      }))));
+  }
+
+  // ---------- Übersicht ----------
+  function renderHome() {
+    const view = $("#view");
+    view.replaceChildren();
+    if (!shelf || !shelf.books.length) {
+      view.append(el("section", null,
+        el("h2", null, "Noch keine Bücher"),
+        el("p", { class: "empty" }, "Sobald du in „Was lese ich heute?“ Bücher einträgst, erscheinen sie hier."),
+        BRIDGE ? null : el("a", { class: "cross", href: "index.html" }, "Zu „Was lese ich heute?“")));
+      return;
+    }
+    const today = todaysBook();
+    if (today) {
+      view.append(el("section", null,
+        el("h2", null, "Heute dran"),
+        label(today, { small: true, href: "#buch-" + encodeURIComponent(today.id) })));
+    }
+    const books = shelf.books.slice();
+    const reading = books.filter((b) => !isDone(b) && started(entry(b.id)))
+      .sort((a, b) => (entry(b.id).updated || 0) - (entry(a.id).updated || 0));
+    const fresh = books.filter((b) => !isDone(b) && !started(entry(b.id)))
+      .sort((a, b) => collator.compare(a.name, b.name));
+    const done = books.filter(isDone)
+      .sort((a, b) => String(entry(b.id).finished).localeCompare(String(entry(a.id).finished)));
+
+    const group = (title, list, emptyText, cls) => el("section", null,
+      el("h2", null, `${title} · ${list.length}`),
+      list.length ? bookTable(list, cls) : el("p", { class: "empty" }, emptyText));
+    view.append(
+      group("Am Lesen", reading, "Noch kein Buch angefangen. Tipp auf ein Buch, um Seiten oder Gedanken einzutragen.", "grp-lesen"),
+      group("Noch nicht angefangen", fresh, "Alle Bücher sind angefangen oder gelesen.", "grp-neu"),
+      group("Gelesen", done, "Noch kein Buch fertig gelesen.", "grp-fertig"),
+      BRIDGE ? null : el("a", { class: "cross", href: "index.html" }, "Zum Regal: Was lese ich heute?"));
+  }
+
+  // ---------- Ein Buch ----------
+  let showAllLog = false;
+  function renderBook(id) {
+    const view = $("#view");
+    view.replaceChildren();
+    const b = shelf && shelf.books.find((x) => x.id === id);
+    if (!b) {
+      view.append(el("section", null,
+        el("a", { class: "back", href: "#" }, icon("back", 16), "Alle Bücher"),
+        el("p", { class: "empty" }, "Dieses Buch steht nicht mehr im Regal.")));
+      return;
+    }
+    const e = entry(id);
+    const c = color(b.epoch);
+    const { title } = splitName(b.name);
+    view.style.setProperty("--c", c);
+
+    view.append(el("div", { class: "detail-head" },
+      el("a", { class: "back", href: "#" }, icon("back", 16), "Alle Bücher"),
+      label(b, {})));
+
+    // Seiten
+    const log = e.log || [];
+    const days = new Set((e.log || []).map((x) => x.d)).size;
+    // Netto gelesen: von der ersten eingetragenen Startseite bis zur aktuellen Seite, Tippfehler heben sich auf.
+    const gained = log.length ? Math.max(0, (e.page || 0) - (log[0].from || 0)) : 0;
+    const p = pct(e);
+    const first = showAllLog ? 0 : Math.max(0, log.length - 5);
+    const shownLog = log.slice(first);
+    view.append(el("section", { "aria-labelledby": "h-pages" },
+      el("h2", { id: "h-pages" }, "Seiten"),
+      el("div", { class: "prog" },
+        el("div", { class: "prog-top" },
+          el("p", { class: "big" }, el("b", null, String(e.page || 0)), e.total ? `von ${e.total} Seiten` : "Seiten gelesen"),
+          e.total ? el("p", { class: "pct" }, p + " %") : null),
+        e.total ? el("div", { class: "bar", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(p), "aria-label": "Fortschritt" },
+          el("span", { style: { width: p + "%" } })) : null,
+        days ? el("p", { class: "stats" },
+          `${plural(days, "Lesetag", "Lesetage")} · im Schnitt ${plural(Math.round(gained / days), "Seite", "Seiten")} pro Tag · angefangen am ${longDate(e.log[0].d)}`) : null),
+      el("form", { class: "inline-form", id: "page-form", autocomplete: "off", onsubmit: (ev) => { ev.preventDefault(); addPage(b); } },
+        el("div", { class: "field narrow" },
+          el("label", { for: "page-in" }, "Ich bin auf Seite"),
+          el("input", { id: "page-in", type: "number", inputmode: "numeric", min: "0", step: "1", placeholder: e.page ? String(e.page + 20) : "z. B. 24" })),
+        el("button", { class: "btn", type: "submit" }, "Eintragen"),
+        el("div", { class: "field narrow" },
+          el("label", { for: "total-in" }, "Seiten im Buch"),
+          el("input", { id: "total-in", type: "number", inputmode: "numeric", min: "1", step: "1", placeholder: "z. B. 320", value: e.total ? String(e.total) : "",
+            onchange: (ev) => setTotal(b, ev.target.value),
+            // Enter speichert nur die Seitenzahl, ohne das Seiten-Formular abzuschicken.
+            onkeydown: (ev) => { if (ev.key === "Enter") { ev.preventDefault(); ev.target.blur(); } } }))),
+      shownLog.length ? el("div", { class: "sheet-wrap" }, el("table", { class: "sheet colored", "aria-label": "Verlauf der gelesenen Seiten" },
+        el("thead", null, el("tr", null,
+          el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
+          el("th", { scope: "col" }, "Datum"),
+          el("th", { class: "num", scope: "col" }, "Von"),
+          el("th", { class: "num", scope: "col" }, "Bis"),
+          el("th", { class: "num", scope: "col" }, "Seiten"))),
+        el("tbody", null, shownLog.map((x, i) => {
+          const diff = (x.to || 0) - (x.from || 0);
+          return el("tr", null,
+            el("th", { class: "rh", scope: "row" }, String(first + i + 1)),
+            el("td", { class: "date" }, numDate(x.d)),
+            el("td", { class: "num" }, String(x.from || 0)),
+            el("td", { class: "num" }, String(x.to)),
+            el("td", { class: "num" + (diff > 0 ? " plus" : "") }, diff > 0 ? "+" + diff : String(diff)));
+        })),
+        el("tfoot", null, el("tr", null,
+          el("th", { class: "rh", scope: "row" }, "Σ"),
+          el("td", { colspan: "3" }, `Summe (${plural(days, "Lesetag", "Lesetage")})`),
+          el("td", { class: "num" }, String(gained)))))) : null,
+      log.length > 5 ? el("button", { class: "link log-more", type: "button", onclick: () => { showAllLog = !showAllLog; render(); } },
+        showAllLog ? "Weniger anzeigen" : `Alle ${log.length} Einträge anzeigen`) : null));
+
+    // Gedanken
+    const notes = e.notes || [];
+    view.append(el("section", { "aria-labelledby": "h-notes" },
+      el("h2", { id: "h-notes" }, "Gedanken"),
+      notes.length ? el("div", { class: "sheet-wrap" }, el("table", { class: "sheet colored", "aria-label": "Gedanken" },
+        el("thead", null, el("tr", null,
+          el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
+          el("th", { scope: "col" }, "Datum"),
+          el("th", { scope: "col" }, "Gedanke"),
+          el("th", { scope: "col" }, el("span", { class: "vh" }, "Löschen")))),
+        el("tbody", null, notes.map((n, i) => el("tr", null,
+          el("th", { class: "rh", scope: "row" }, String(i + 1)),
+          el("td", { class: "date" }, numDate(n.d)),
+          el("td", { class: "text" }, n.t),
+          el("td", { class: "del" }, el("button", { class: "cell-btn", type: "button", "aria-label": "Gedanken löschen", title: "Löschen", onclick: () => removeNote(b, n.id) }, icon("x", 15))))))))
+        : el("p", { class: "empty" }, "Noch keine Gedanken. Schreib auf, was dir beim Lesen auffällt, einen Satz pro Punkt."),
+      el("form", { class: "inline-form", autocomplete: "off", onsubmit: (ev) => { ev.preventDefault(); addNote(b); } },
+        el("div", { class: "field" },
+          el("label", { for: "note-in", class: "vh" }, "Neuer Gedanke"),
+          el("input", { id: "note-in", maxlength: "500", placeholder: "Neuer Gedanke …", enterkeyhint: "done" })),
+        el("button", { class: "btn", type: "submit" }, "Hinzufügen"))));
+
+    // Zusammenfassung
+    view.append(el("section", { "aria-labelledby": "h-sum" },
+      el("h2", { id: "h-sum" }, "Zusammenfassung"),
+      el("label", { for: "sum-in", class: "vh" }, "Zusammenfassung"),
+      el("textarea", { id: "sum-in", rows: "7", maxlength: "20000", placeholder: "Worum geht es? Was bleibt dir von dem Buch?", value: (sumDraft && sumDraft.id === id) ? sumDraft.text : (e.summary || ""),
+        oninput: (ev) => queueSummary(b, ev.target.value), onblur: (ev) => saveSummary(b, ev.target.value) }),
+      el("p", { class: "saved", id: "sum-state" }, (sumDraft && sumDraft.id === id) ? "Nicht gespeichert" : e.summary ? "Gespeichert" : "")));
+
+    // Fertig
+    const atEnd = e.total && e.page >= e.total;
+    view.append(e.finished
+      ? el("section", { class: "finish" },
+          el("p", { class: "done-line" }, icon("check", 16), " Gelesen am " + longDate(e.finished)),
+          el("p", { class: "hint" }, "„Was lese ich heute?“ schlägt dieses Buch nicht mehr vor. Im Verzeichnis findest du es weiterhin."),
+          el("button", { class: "link", type: "button", style: { "justify-self": "start" }, onclick: () => setFinished(b, false) }, "Doch noch nicht fertig"))
+      : el("section", { class: "finish" },
+          el("button", { class: "btn" + (atEnd ? " go" : ""), type: "button", style: { "justify-self": "start" }, onclick: () => setFinished(b, true) }, "Fertig gelesen"),
+          el("p", { class: "hint" }, `Danach schlägt „Was lese ich heute?“ „${title}“ nicht mehr vor. Im Verzeichnis bleibt es.`)));
+  }
+
+  // ---------- Aktionen ----------
+  function addPage(b) {
+    const input = $("#page-in");
+    const n = parseInt(input.value, 10);
+    const e = entry(b.id);
+    if (!Number.isFinite(n) || n < 0) { notify("Gib die Seite als Zahl ein."); input.focus(); return; }
+    if (e.total && n > e.total) { notify(`Das Buch hat nur ${e.total} Seiten.`); input.focus(); return; }
+    if (n === (e.page || 0)) { notify(`Du bist schon auf Seite ${n}.`); return; }
+    const ok = change(b.id, (x) => {
+      x.log = x.log || [];
+      x.log.push({ d: todayKey(), from: x.page || 0, to: n });
+      x.page = n;
+    });
+    if (!ok) return;
+    load(); render();
+    const diff = n - (e.page || 0);
+    if (e.total && n >= e.total && !e.finished) notify("Letzte Seite erreicht. Markier das Buch unten als fertig gelesen.");
+    else notify(diff > 0 ? `${plural(diff, "Seite", "Seiten")} eingetragen.` : `Zurück auf Seite ${n}.`);
+  }
+  function setTotal(b, raw) {
+    const n = parseInt(raw, 10);
+    const page = entry(b.id).page || 0;
+    if (Number.isFinite(n) && n > 0 && n < page) {
+      const input = $("#total-in");
+      if (input) input.value = entry(b.id).total ? String(entry(b.id).total) : "";
+      notify(`Du bist schon auf Seite ${page}. Das Buch muss mindestens so viele Seiten haben.`);
+      return;
+    }
+    const ok = change(b.id, (x) => { if (Number.isFinite(n) && n > 0) x.total = n; else delete x.total; });
+    if (!ok) return;
+    load(); render();
+    notify(Number.isFinite(n) && n > 0 ? `Seitenzahl gespeichert: ${n}.` : "Seitenzahl entfernt.");
+  }
+  function addNote(b) {
+    const input = $("#note-in");
+    const t = input.value.replace(/\s+/g, " ").trim();
+    if (!t) { input.focus(); return; }
+    const ok = change(b.id, (x) => {
+      x.notes = x.notes || [];
+      x.notes.push({ id: "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t, d: todayKey() });
+    });
+    if (!ok) return;
+    load(); render();
+    const next = $("#note-in");
+    if (next) next.focus();
+  }
+  function removeNote(b, noteId) {
+    let removed = null, at = -1;
+    const ok = change(b.id, (x) => {
+      x.notes = x.notes || [];
+      at = x.notes.findIndex((n) => n.id === noteId);
+      if (at >= 0) removed = x.notes.splice(at, 1)[0];
+    });
+    if (!ok || !removed) return;
+    load(); render();
+    notify("Gedanke gelöscht.", "Rückgängig", () => {
+      change(b.id, (x) => { x.notes = x.notes || []; x.notes.splice(Math.min(at, x.notes.length), 0, removed); });
+      load(); render();
+    });
+  }
+  // sumDraft: Text, der nicht gespeichert werden konnte (Speicher voll); bleibt im Feld stehen.
+  let sumTimer = null, sumPending = null, sumDraft = null;
+  function queueSummary(b, text) {
+    $("#sum-state").textContent = "…";
+    clearTimeout(sumTimer);
+    sumPending = { b, text };
+    sumTimer = setTimeout(() => saveSummary(b, text), 600);
+  }
+  // Eine noch wartende Zusammenfassung sofort speichern (Seite verlassen, Buch wechseln).
+  function flushSummary() {
+    if (sumPending) saveSummary(sumPending.b, sumPending.text);
+  }
+  function saveSummary(b, text) {
+    clearTimeout(sumTimer);
+    sumPending = null;
+    // Den Status nur im Feld dieses Buchs setzen, nicht in der Ansicht eines anderen.
+    const state = () => (currentId() === b.id ? $("#sum-state") : null);
+    if ((entry(b.id).summary || "") === text) {
+      if (sumDraft && sumDraft.id === b.id) sumDraft = null;
+      const s = state(); if (s && text) s.textContent = "Gespeichert";
+      return;
+    }
+    if (change(b.id, (x) => { if (text.trim()) x.summary = text; else delete x.summary; })) {
+      if (sumDraft && sumDraft.id === b.id) sumDraft = null;
+      J = readJournal().books;
+      const s = state();
+      if (s) s.textContent = text.trim() ? "Gespeichert" : "";
+    } else {
+      // Nicht still verwerfen: der Text bleibt als Entwurf, auch wenn die Ansicht neu gezeichnet wird.
+      sumDraft = { id: b.id, text };
+      const s = state();
+      if (s) s.textContent = "Nicht gespeichert";
+    }
+  }
+  function setFinished(b, done) {
+    const { title } = splitName(b.name);
+    const ok = change(b.id, (x) => { if (done) x.finished = todayKey(); else delete x.finished; });
+    if (!ok) return;
+    load(); render();
+    notify(done ? `„${title}“ ist gelesen und wird nicht mehr vorgeschlagen.` : `„${title}“ wird wieder vorgeschlagen.`);
+    if (done && !reduced()) window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // ---------- Steuerung ----------
+  function currentId() {
+    const m = location.hash.match(/^#buch-(.+)$/);
+    if (!m) return null;
+    // Ein kaputter Verweis (z. B. „%E0“) führt zur Übersicht statt zu einer leeren Seite.
+    try { return decodeURIComponent(m[1]); } catch (e) { return null; }
+  }
+  let lastView = null;
+  function render() {
+    const id = currentId();
+    const viewKey = id || "home";
+    if (viewKey !== lastView) { showAllLog = false; }
+    renderPending = false;
+    if (id) renderBook(id); else renderHome();
+    document.title = id && shelf && shelf.books.find((x) => x.id === id)
+      ? splitName(shelf.books.find((x) => x.id === id).name).title + " · Lesetagebuch"
+      : "Lesetagebuch";
+    if (viewKey !== lastView) { window.scrollTo(0, 0); lastView = viewKey; }
+  }
+  const typing = () => {
+    const a = document.activeElement;
+    return !!(a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA"));
+  };
+  // Neu zeichnen, ohne noch nicht abgeschickte Eingaben (Seite, Gedanke) zu verlieren.
+  // Die Zusammenfassung bleibt über flushSummary() und sumDraft erhalten.
+  function renderKeepingDrafts() {
+    flushSummary();
+    const id = currentId();
+    const drafts = ["page-in", "note-in"].map((k) => [k, $("#" + k) ? $("#" + k).value : ""]);
+    render();
+    if (currentId() !== id) return;
+    for (const [k, v] of drafts) { const f = $("#" + k); if (f && v) f.value = v; }
+  }
+  // Gedrückte Zeiger nach pointerId: ein verlorenes pointerup (Gesten, Fenster weg) hält nichts dauerhaft fest.
+  const pointers = new Set();
+  let renderPending = false;
+  function refresh() {
+    renderDate();
+    load();
+    // Nicht mitten im Schreiben oder zwischen Drücken und Loslassen neu aufbauen: das Neuzeichnen kommt nach.
+    if (typing() || pointers.size) { renderPending = true; return; }
+    renderPending = false;
+    renderKeepingDrafts();
+  }
+  function catchUp() {
+    if (!renderPending || pointers.size) return;
+    // Hat ein Knopf, Link oder Feld den Fokus, würde das Neuzeichnen ihn ersetzen und den Fokus verlieren.
+    // Dann wartet es bis zum nächsten focusout oder pointerup (oder bis ohnehin neu gezeichnet wird).
+    const a = document.activeElement;
+    if (a && a !== document.body) return;
+    renderPending = false;
+    renderKeepingDrafts();
+  }
+  const later = () => { if (renderPending) setTimeout(catchUp, 0); };
+  // Erst nach dem Fokuswechsel prüfen, ob schon das nächste Element den Fokus hat.
+  document.addEventListener("focusout", later);
+  document.addEventListener("pointerdown", (ev) => { pointers.add(ev.pointerId); }, true);
+  document.addEventListener("pointerup", (ev) => { pointers.delete(ev.pointerId); later(); }, true);
+  document.addEventListener("pointercancel", (ev) => { pointers.delete(ev.pointerId); later(); }, true);
+  window.addEventListener("blur", () => { pointers.clear(); });
+
+  let toastTimer = null, toastMs = 2800;
+  // Ausgeblendet ist der Toast auch für Tastatur und Screenreader weg: Knopf versteckt, Handler entfernt.
+  function hideToast() {
+    clearTimeout(toastTimer);
+    $("#toast").classList.remove("show");
+    const btn = $("#toast-act");
+    btn.hidden = true;
+    btn.onclick = null;
+  }
+  function armToast() {
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      const t = $("#toast");
+      // Solange der Knopf den Fokus hat oder der Zeiger darüber ist, bleibt der Toast stehen.
+      if (t.matches(":hover") || t.contains(document.activeElement)) return;
+      hideToast();
+    }, toastMs);
+  }
+  $("#toast").addEventListener("focusout", () => { if ($("#toast").classList.contains("show")) armToast(); });
+  $("#toast").addEventListener("pointerleave", () => { if ($("#toast").classList.contains("show")) armToast(); });
+  function notify(msg, actLabel, act) {
+    const t = $("#toast"), btn = $("#toast-act");
+    $("#toast-text").textContent = msg;
+    btn.hidden = !actLabel;
+    t.classList.toggle("has-act", !!actLabel);
+    btn.onclick = actLabel ? () => { hideToast(); act(); } : null;
+    if (actLabel) btn.textContent = actLabel;
+    t.classList.add("show");
+    toastMs = actLabel ? 5000 : 2800;
+    armToast();
+  }
+  function renderDate() {
+    $("#date").textContent = new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+  }
+
+  window.addEventListener("hashchange", () => { flushSummary(); load(); render(); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) { pointers.clear(); flushSummary(); } else refresh(); });
+  window.addEventListener("pagehide", flushSummary);
+  window.addEventListener("pageshow", refresh);
+  window.addEventListener("storage", refresh);
+  window.addEventListener("appresume", refresh);
+
+  // Einmalig: Einträge aus der früheren Version (beide Apps in einer APK) übernehmen.
+  function importLegacy() {
+    if (!BRIDGE || !shelf || !shelf.legacy || !shelf.legacy.books) return;
+    let own = null;
+    try { own = localStorage.getItem(JOURNAL_KEY); } catch (e) { return; }
+    if (own !== null || !Object.keys(shelf.legacy.books).length) return;
+    try {
+      localStorage.setItem(JOURNAL_KEY, JSON.stringify(shelf.legacy));
+    } catch (e) { /* bleibt beim leeren Tagebuch */ }
+  }
+
+  renderDate();
+  load();
+  importLegacy();
+  load();
+  share();
+  render();
+})();
+</script>
+</body>
+</html>
