@@ -21,14 +21,11 @@
   --danger: #C0322B;
   --focus: #1F56D3;
   --ok: #0D7F57;
-  --grid: #C8D1E3;
-  --head: #1F56D3;
-  --head-dark: #1846B0;
-  --head-text: #FFFFFF;
-  --band: #EAF0FB;
-  --rowhead: #EDEFF4;
-  --select: #1E7145;
-  --grey-head: #5B6382;
+  --tab-1: #1F56D3;
+  --tab-2: #A2307A;
+  --tab-3: #0D7F57;
+  --tab-4: #56607F;
+  --on-tab: #FFFFFF;
   --font-display: "Bodoni Moda", "Bodoni 72", Didot, Georgia, serif;
   --font-ui: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
@@ -39,14 +36,12 @@
   :root:not([data-theme="light"]) {
     --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
     --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
-    --grid: #2E3758; --head: #2B5BD0; --head-dark: #2149AE; --head-text: #FFFFFF; --band: #1A2140; --rowhead: #1B2036; --select: #4CC38A; --grey-head: #46506F;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
   --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
-    --grid: #2E3758; --head: #2B5BD0; --head-dark: #2149AE; --head-text: #FFFFFF; --band: #1A2140; --rowhead: #1B2036; --select: #4CC38A; --grey-head: #46506F;
   color-scheme: dark;
 }
 
@@ -59,11 +54,11 @@ body {
   font-family: var(--font-ui);
   font-size: 15px;
   line-height: 1.5;
+  overflow-wrap: break-word;
   -webkit-font-smoothing: antialiased;
 }
 button, input, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 .wrap {
   max-width: 760px;
@@ -72,9 +67,10 @@ button, input, textarea { font: inherit; color: inherit; }
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 20px 80px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 36px;
 }
-main { display: grid; gap: 40px; min-width: 0; }
+main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; min-width: 0; }
 
 .top {
   display: flex; justify-content: space-between; align-items: baseline;
@@ -87,7 +83,7 @@ main { display: grid; gap: 40px; min-width: 0; }
 h2, .eyebrow {
   margin: 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);
 }
-section { display: grid; gap: 12px; min-width: 0; }
+section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
 
 /* Etikett wie auf dem Buchrücken */
 .label {
@@ -120,67 +116,87 @@ section { display: grid; gap: 12px; min-width: 0; }
 a.label { transition: transform 0.15s; }
 a.label:hover { transform: translateY(-2px); }
 
-/* Bücherlisten */
-/* Listen wie formatierte Excel-Tabellen: farbige Kopfzeile, Gitter, Zeilennummern, Streifen, Datenbalken */
+/* Reiter und Listen: alles passt auf die Breite, nichts lässt sich seitlich schieben */
 .ico { display: inline-block; flex: none; vertical-align: -0.18em; }
-/* relative: auch unsichtbare Beschriftungen bleiben im Scrollbereich und verbreitern die Seite nicht */
-.sheet-wrap { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--grid); background: var(--card); }
-.sheet {
-  border-collapse: separate; border-spacing: 0; width: 100%;
-  font-size: 0.9rem; line-height: 1.35;
+.tabs { display: flex; align-items: flex-end; gap: 4px; margin: 0; padding: 0; }
+.tab {
+  flex: 1 1 0; min-width: 0; min-height: 44px; padding: 8px 6px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--line); border-bottom: 0; border-radius: 10px 10px 0 0;
+  background: var(--hover); color: var(--muted);
+  font-weight: 600; font-size: 0.88rem; line-height: 1.15; text-align: center;
+  cursor: pointer; hyphens: auto; overflow-wrap: break-word;
 }
-.sheet.wide { min-width: 520px; }
-.sheet tbody tr { --cell: var(--card); }
-.sheet tbody tr:nth-child(even) { --cell: var(--band); }
-.sheet th, .sheet td {
-  padding: 7px 10px; text-align: left; vertical-align: middle;
-  border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid);
-  background-color: var(--cell, var(--card));
+.tab .n { font-weight: 500; font-variant-numeric: tabular-nums; opacity: 0.85; }
+.tab[aria-selected="true"] { background: var(--t); border-color: var(--t); color: var(--on-tab); }
+.tabs.auto .tab { flex: 1 1 auto; }
+.tabs.colored .tab[aria-selected="true"] {
+  background: linear-gradient(rgb(0 0 0 / 0.22), rgb(0 0 0 / 0.22)), var(--c);
+  border-color: transparent;
 }
-.sheet tr > :last-child { border-right: 0; }
-.sheet tbody tr:last-child > * { border-bottom: 0; }
-.sheet thead th {
-  background-color: var(--head); color: var(--head-text); font-weight: 700; white-space: nowrap;
-  border-right-color: rgb(255 255 255 / 0.22); border-bottom: 0;
+.panel {
+  border: 1px solid var(--line); border-top: 3px solid var(--t);
+  border-radius: 0 0 10px 10px; background: var(--card); padding: 4px 14px 10px;
 }
-.sheet .rh {
-  position: sticky; left: 0; z-index: 1;
-  width: 40px; min-width: 40px; padding-inline: 4px; text-align: center;
-  font-weight: 500; font-size: 0.78rem; color: var(--muted); background-color: var(--rowhead);
-  font-variant-numeric: tabular-nums;
+.tabs.colored + .panel { border-top-color: var(--c); }
+.panel.stack { display: grid; gap: 14px; padding-top: 14px; padding-bottom: 14px; }
+@media (max-width: 400px) { .tab { font-size: 0.82rem; padding-inline: 4px; } .panel { padding-inline: 12px; } }
+
+.items { list-style: none; margin: 0; padding: 0; }
+.item {
+  display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 4px 12px;
+  align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line);
 }
-.sheet thead .rh { background-color: var(--head-dark); color: var(--head-text); z-index: 2; }
-.sheet .c-name { position: sticky; left: 40px; z-index: 1; min-width: 170px; max-width: 250px; overflow-wrap: anywhere; }
-.sheet thead .c-name { z-index: 2; }
-.sheet .num { text-align: right; font-variant-numeric: tabular-nums; }
-.sheet td.date { white-space: nowrap; color: var(--muted); }
-.sheet td.c-epoch { background-color: color-mix(in srgb, var(--c) 24%, var(--cell)); font-weight: 600; }
-.sheet td.c-status { white-space: nowrap; min-width: 120px; }
-.sheet td.c-status.done { background-color: color-mix(in srgb, var(--ok) 20%, var(--cell)); color: var(--ok); font-weight: 700; }
-.sheet td.c-status.databar {
-  background-image: linear-gradient(90deg, color-mix(in srgb, var(--c) 42%, transparent) var(--p), transparent var(--p));
+.items > li:last-child > .item { border-bottom: 0; }
+/* Die ganze Zeile ist ein Link zum Buch */
+a.item {
+  grid-template-columns: 12px minmax(0, 1fr);
+  color: inherit; text-decoration: none;
+  margin-inline: -6px; padding-inline: 6px;
 }
-.sheet td.plus { font-weight: 700; color: var(--ok); }
-.sheet td.text { overflow-wrap: anywhere; white-space: pre-wrap; }
-.sheet td.del { width: 1%; padding: 4px 6px; }
-.sheet tfoot th, .sheet tfoot td {
-  font-weight: 700; background-color: var(--card); border-top: 3px double var(--grid); border-bottom: 0;
+a.item:hover { background: var(--hover); }
+.item-spine {
+  width: 12px; align-self: stretch; min-height: 40px; border-radius: 2px 2px 1px 1px;
+  background: linear-gradient(90deg, rgb(0 0 0 / 0.25), rgb(255 255 255 / 0.15) 50%, rgb(0 0 0 / 0.25)), var(--c);
 }
-.sheet tbody tr.click { cursor: pointer; }
-.sheet tbody tr.click:hover > * { background-color: color-mix(in srgb, var(--select) 10%, var(--cell)); }
-.sheet a.cell-link { color: inherit; text-decoration: none; font-weight: 600; }
-.sheet a.cell-link:hover { text-decoration: underline; }
-.sheet.grp-neu thead th { background-color: var(--grey-head); }
-.sheet.grp-fertig thead th { background-color: var(--ok); }
-.sheet.colored thead th { background-color: var(--c); }
-.sheet.colored thead .rh { background-color: color-mix(in srgb, var(--c) 78%, black); }
-.sheet.colored tbody tr:nth-child(even) { --cell: color-mix(in srgb, var(--c) 9%, var(--card)); }
-.cell-btn {
-  display: inline-grid; place-items: center; min-width: 30px; height: 28px; padding: 0 8px;
-  border: 1px solid var(--grid); border-radius: 3px; background: var(--card); color: var(--danger);
-  font-size: 0.85rem; cursor: pointer;
+.item-main { min-width: 0; }
+.item-author { margin: 0 0 1px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted); overflow-wrap: anywhere; }
+.item-title { margin: 0; font-family: var(--font-display); font-style: italic; font-size: 1.1rem; line-height: 1.25; overflow-wrap: anywhere; }
+.item-meta { margin: 4px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; font-size: 0.82rem; color: var(--muted); }
+.item-meta .ep { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); }
+.item-meta .ep::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+.item-meta .done { color: var(--ok); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+.icon-btn {
+  display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); cursor: pointer;
 }
-.cell-btn:hover { background: var(--hover); }
+.icon-btn:hover { background: var(--hover); }
+.icon-btn.danger { color: var(--danger); }
+.progress { height: 6px; margin-top: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.progress span { display: block; height: 100%; border-radius: inherit; background: var(--c); }
+.panel-empty { margin: 0; padding: 18px 0 12px; color: var(--muted); }
+
+/* Verlauf der Seiten */
+.log { list-style: none; margin: 0; padding: 0; font-size: 0.9rem; }
+.log li, .log-sum {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: baseline;
+  padding: 8px 0; border-bottom: 1px solid var(--line);
+}
+.log .d { color: var(--muted); }
+.log .plus { font-weight: 700; color: var(--ok); }
+.log-num { min-width: 3.5ch; text-align: right; font-variant-numeric: tabular-nums; }
+.log-sum { grid-template-columns: minmax(0, 1fr) auto; margin-top: -1px; border-top: 3px double var(--line); border-bottom: 0; font-weight: 700; font-size: 0.9rem; }
+
+/* Gedanken */
+.thoughts { list-style: none; margin: 0; padding: 0; }
+.thoughts li {
+  display: grid; grid-template-columns: 7px minmax(0, 1fr) auto; gap: 12px; align-items: start;
+  padding: 10px 0; border-bottom: 1px solid var(--line);
+}
+.thoughts li:last-child { border-bottom: 0; }
+.thoughts .dot { width: 7px; height: 7px; margin-top: 0.62em; background: var(--c); transform: rotate(45deg); }
+.thought-t { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.thought-d { margin: 2px 0 0; font-size: 0.78rem; color: var(--muted); }
 .empty { margin: 0; padding: 14px 4px; color: var(--muted); }
 .cross {
   justify-self: start; display: inline-flex; align-items: center; min-height: 40px;
@@ -228,7 +244,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
 .btn.go { animation: nudge 1.2s ease-in-out 2; }
 @keyframes nudge { 50% { transform: scale(1.05); } }
 .link {
-  background: none; border: 0; padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  background: none; border: 0; padding: 6px 8px; border-radius: 6px; cursor: pointer; min-height: 40px;
   font-size: 0.85rem; font-weight: 500; color: var(--muted);
 }
 .link:hover { color: var(--ink); background: var(--hover); }
@@ -254,19 +270,6 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
 .toast.has-act.show { pointer-events: auto; }
 .toast button { background: none; border: 0; color: var(--gilt); font-weight: 700; cursor: pointer; padding: 4px 8px; }
 .toast:not(.has-act) { padding-right: 18px; }
-
-/* Schmale Handys: Tabelle enger setzen, damit mehr Spalten ohne Wischen passen */
-@media (max-width: 480px) {
-  .sheet { font-size: 0.84rem; }
-  .sheet.wide { min-width: 0; }
-  .sheet th, .sheet td { padding: 6px 7px; }
-  .sheet .rh { width: 30px; min-width: 30px; padding-inline: 2px; }
-  .sheet .c-name { left: 30px; min-width: 128px; }
-  .sheet.wide .c-name { min-width: 110px; }
-  .sheet.wide .c-ep, .sheet.wide td.c-epoch { display: none; }
-  .sheet td.c-status { min-width: 0; }
-  .cell-btn { min-width: 36px; height: 36px; padding: 0 6px; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -302,6 +305,8 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
   const SHELF_KEY = "was-lese-ich-heute.v1";
   // Gedanken, Zusammenfassung, Seiten und „fertig gelesen“ stehen hier.
   const JOURNAL_KEY = "was-lese-ich-heute.tagebuch.v1";
+  // Zuletzt gewählter Reiter der Übersicht.
+  const TAB_KEY = "was-lese-ich-heute.tagebuch.reiter";
   // In der Android-App verbindet window.Bruecke dieses Tagebuch mit der App „Was lese ich heute?“.
   // Die Android-Apps tauschen nur still Daten aus; Links auf die andere Seite gibt es nur im Browser.
   const BRIDGE = typeof window.Bruecke !== "undefined" ? window.Bruecke : null;
@@ -373,7 +378,6 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
   function asDate(d) { return new Date(String(d) + "T12:00:00"); }
   function longDate(d) { return asDate(d).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" }); }
   function numDate(d) { const t = asDate(d); return isNaN(t) ? String(d) : t.toLocaleDateString("de-DE"); }
-  function shortDate(d) { return asDate(d).toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" }); }
   const collator = new Intl.Collator("de", { sensitivity: "base", numeric: true });
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
@@ -477,32 +481,61 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     return Math.max(0, Math.min(100, Math.round((e.page / e.total) * 100)));
   }
 
-  function progressCell(e) {
-    if (e.finished) return el("td", { class: "c-status done" }, icon("check", 14), " " + numDate(e.finished));
-    if (e.page && e.total) return el("td", { class: "c-status databar", style: { "--p": pct(e) + "%" } }, `${e.page}/${e.total} · ${pct(e)} %`);
-    if (e.page) return el("td", { class: "c-status" }, `S. ${e.page}`);
-    return el("td", { class: "c-status" }, "");
+  // Reiterleiste mit Flächen. Alle Flächen stehen im DOM, nicht gewählte sind versteckt:
+  // ein Reiterwechsel schaltet nur um und lässt Eingaben und Fokus unberührt.
+  function tabbed(name, label, cls, list, selected, onSelect) {
+    const tabs = [], panels = [];
+    const select = (key, focus) => {
+      list.forEach((t, i) => {
+        const on = t.key === key;
+        tabs[i].setAttribute("aria-selected", on ? "true" : "false");
+        tabs[i].tabIndex = on ? 0 : -1;
+        panels[i].hidden = !on;
+        if (on && focus) tabs[i].focus();
+      });
+      onSelect(key);
+    };
+    const keys = (ev) => {
+      const i = list.findIndex((t) => t.key === ev.currentTarget.dataset.key);
+      const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: list.length - 1 }[ev.key];
+      if (next == null) return;
+      ev.preventDefault();
+      select(list[(next + list.length) % list.length].key, true);
+    };
+    for (const t of list) {
+      const on = t.key === selected;
+      tabs.push(el("button", {
+        class: "tab", type: "button", role: "tab", id: `tab-${name}-${t.key}`, "data-key": t.key,
+        "aria-selected": on ? "true" : "false", "aria-controls": `panel-${name}-${t.key}`, tabindex: on ? "0" : "-1",
+        style: { "--t": t.color }, onclick: () => select(t.key, false), onkeydown: keys,
+      }, t.text, t.count ? el("span", { class: "n" }, String(t.count)) : null));
+      panels.push(el("div", {
+        class: "panel" + (t.stack ? " stack" : ""), role: "tabpanel", id: `panel-${name}-${t.key}`,
+        "aria-labelledby": `tab-${name}-${t.key}`, hidden: !on, style: { "--t": t.color },
+      }, t.body));
+    }
+    return el("div", null, el("div", { class: cls, role: "tablist", "aria-label": label }, tabs), panels);
   }
 
-  function bookTable(list, group) {
-    const open = (b) => { location.hash = "#buch-" + encodeURIComponent(b.id); };
-    return el("div", { class: "sheet-wrap" }, el("table", { class: "sheet wide " + group },
-      el("thead", null, el("tr", null,
-        el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
-        el("th", { class: "c-name", scope: "col" }, "Buch"),
-        el("th", { class: "c-ep", scope: "col" }, "Epoche"),
-        el("th", { scope: "col" }, "Fortschritt"),
-        el("th", { class: "num", scope: "col" }, "Gedanken"))),
-      el("tbody", null, list.map((b, i) => {
-        const e = entry(b.id);
-        const n = (e.notes || []).length;
-        return el("tr", { class: "click", style: { "--c": color(b.epoch) }, onclick: (ev) => { if (ev.target.tagName !== "A") open(b); } },
-          el("th", { class: "rh", scope: "row" }, String(i + 1)),
-          el("td", { class: "c-name" }, el("a", { class: "cell-link", href: "#buch-" + encodeURIComponent(b.id) }, b.name)),
-          el("td", { class: "c-epoch" }, b.epoch || ""),
-          progressCell(e),
-          el("td", { class: "num" }, n ? String(n) : ""));
-      }))));
+  // Eine Zeile pro Buch; die ganze Zeile führt zum Buch.
+  function bookItem(b) {
+    const { author, title } = splitName(b.name);
+    const e = entry(b.id);
+    const n = (e.notes || []).length;
+    let state = null;
+    if (e.finished) state = el("span", { class: "done" }, icon("check", 14), "Gelesen am " + numDate(e.finished));
+    else if (e.page && e.total) state = el("span", null, `Seite ${e.page} von ${e.total} · ${pct(e)} %`);
+    else if (e.page) state = el("span", null, `Bis Seite ${e.page}`);
+    return el("li", null, el("a", { class: "item", href: "#buch-" + encodeURIComponent(b.id), style: { "--c": color(b.epoch) } },
+      el("span", { class: "item-spine", "aria-hidden": "true" }),
+      el("div", { class: "item-main" },
+        author ? el("p", { class: "item-author" }, author) : null,
+        el("p", { class: "item-title" }, title),
+        el("p", { class: "item-meta" },
+          el("span", { class: "ep" }, b.epoch || "Ohne Epoche"),
+          state,
+          n ? el("span", null, plural(n, "Gedanke", "Gedanken")) : null),
+        e.page && e.total ? el("div", { class: "progress", "aria-hidden": "true" }, el("span", { style: { width: pct(e) + "%" } })) : null)));
   }
 
   // ---------- Übersicht ----------
@@ -530,18 +563,26 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     const done = books.filter(isDone)
       .sort((a, b) => String(entry(b.id).finished).localeCompare(String(entry(a.id).finished)));
 
-    const group = (title, list, emptyText, cls) => el("section", null,
-      el("h2", null, `${title} · ${list.length}`),
-      list.length ? bookTable(list, cls) : el("p", { class: "empty" }, emptyText));
+    const groups = [
+      { key: "lesen", text: "Am Lesen", color: "var(--tab-1)", list: reading, empty: "Noch kein Buch angefangen. Tipp auf ein Buch, um Seiten oder Gedanken einzutragen." },
+      { key: "neu", text: "Neu", color: "var(--tab-4)", list: fresh, empty: "Alle Bücher sind angefangen oder gelesen." },
+      { key: "gelesen", text: "Gelesen", color: "var(--tab-3)", list: done, empty: "Noch kein Buch fertig gelesen." },
+    ];
+    let saved = null;
+    try { saved = localStorage.getItem(TAB_KEY); } catch (err) { saved = null; }
+    const selected = groups.some((g) => g.key === saved) ? saved : reading.length ? "lesen" : "neu";
     view.append(
-      group("Am Lesen", reading, "Noch kein Buch angefangen. Tipp auf ein Buch, um Seiten oder Gedanken einzutragen.", "grp-lesen"),
-      group("Noch nicht angefangen", fresh, "Alle Bücher sind angefangen oder gelesen.", "grp-neu"),
-      group("Gelesen", done, "Noch kein Buch fertig gelesen.", "grp-fertig"),
+      tabbed("home", "Bücher", "tabs", groups.map((g) => ({
+        key: g.key, text: g.text, color: g.color, count: String(g.list.length),
+        body: g.list.length ? el("ul", { class: "items" }, g.list.map(bookItem)) : el("p", { class: "panel-empty" }, g.empty),
+      })), selected, (key) => { try { localStorage.setItem(TAB_KEY, key); } catch (err) { /* nur für diesmal */ } }),
       BRIDGE ? null : el("a", { class: "cross", href: "index.html" }, "Zum Regal: Was lese ich heute?"));
   }
 
   // ---------- Ein Buch ----------
   let showAllLog = false;
+  // Gewählter Reiter auf der Buchseite; beim Öffnen eines anderen Buchs wieder „Seiten“.
+  let bookTab = "seiten";
   function renderBook(id) {
     const view = $("#view");
     view.replaceChildren();
@@ -569,8 +610,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     const p = pct(e);
     const first = showAllLog ? 0 : Math.max(0, log.length - 5);
     const shownLog = log.slice(first);
-    view.append(el("section", { "aria-labelledby": "h-pages" },
-      el("h2", { id: "h-pages" }, "Seiten"),
+    const pages = [
       el("div", { class: "prog" },
         el("div", { class: "prog-top" },
           el("p", { class: "big" }, el("b", null, String(e.page || 0)), e.total ? `von ${e.total} Seiten` : "Seiten gelesen"),
@@ -590,58 +630,49 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
             onchange: (ev) => setTotal(b, ev.target.value),
             // Enter speichert nur die Seitenzahl, ohne das Seiten-Formular abzuschicken.
             onkeydown: (ev) => { if (ev.key === "Enter") { ev.preventDefault(); ev.target.blur(); } } }))),
-      shownLog.length ? el("div", { class: "sheet-wrap" }, el("table", { class: "sheet colored", "aria-label": "Verlauf der gelesenen Seiten" },
-        el("thead", null, el("tr", null,
-          el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
-          el("th", { scope: "col" }, "Datum"),
-          el("th", { class: "num", scope: "col" }, "Von"),
-          el("th", { class: "num", scope: "col" }, "Bis"),
-          el("th", { class: "num", scope: "col" }, "Seiten"))),
-        el("tbody", null, shownLog.map((x, i) => {
+      shownLog.length ? el("div", null,
+        el("ol", { class: "log", "aria-label": "Verlauf der gelesenen Seiten" }, shownLog.map((x) => {
           const diff = (x.to || 0) - (x.from || 0);
-          return el("tr", null,
-            el("th", { class: "rh", scope: "row" }, String(first + i + 1)),
-            el("td", { class: "date" }, numDate(x.d)),
-            el("td", { class: "num" }, String(x.from || 0)),
-            el("td", { class: "num" }, String(x.to)),
-            el("td", { class: "num" + (diff > 0 ? " plus" : "") }, diff > 0 ? "+" + diff : String(diff)));
+          return el("li", null,
+            el("span", { class: "d" }, numDate(x.d)),
+            el("span", null, `S. ${x.from || 0} → ${x.to}`),
+            el("span", { class: "log-num" + (diff > 0 ? " plus" : "") }, diff > 0 ? "+" + diff : String(diff)));
         })),
-        el("tfoot", null, el("tr", null,
-          el("th", { class: "rh", scope: "row" }, "Σ"),
-          el("td", { colspan: "3" }, `Summe (${plural(days, "Lesetag", "Lesetage")})`),
-          el("td", { class: "num" }, String(gained)))))) : null,
+        el("p", { class: "log-sum" },
+          el("span", null, `Summe · ${plural(days, "Lesetag", "Lesetage")}`),
+          el("span", { class: "log-num" }, String(gained)))) : null,
       log.length > 5 ? el("button", { class: "link log-more", type: "button", onclick: () => { showAllLog = !showAllLog; render(); } },
-        showAllLog ? "Weniger anzeigen" : `Alle ${log.length} Einträge anzeigen`) : null));
+        showAllLog ? "Weniger anzeigen" : `Alle ${log.length} Einträge anzeigen`) : null,
+    ];
 
     // Gedanken
     const notes = e.notes || [];
-    view.append(el("section", { "aria-labelledby": "h-notes" },
-      el("h2", { id: "h-notes" }, "Gedanken"),
-      notes.length ? el("div", { class: "sheet-wrap" }, el("table", { class: "sheet colored", "aria-label": "Gedanken" },
-        el("thead", null, el("tr", null,
-          el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
-          el("th", { scope: "col" }, "Datum"),
-          el("th", { scope: "col" }, "Gedanke"),
-          el("th", { scope: "col" }, el("span", { class: "vh" }, "Löschen")))),
-        el("tbody", null, notes.map((n, i) => el("tr", null,
-          el("th", { class: "rh", scope: "row" }, String(i + 1)),
-          el("td", { class: "date" }, numDate(n.d)),
-          el("td", { class: "text" }, n.t),
-          el("td", { class: "del" }, el("button", { class: "cell-btn", type: "button", "aria-label": "Gedanken löschen", title: "Löschen", onclick: () => removeNote(b, n.id) }, icon("x", 15))))))))
-        : el("p", { class: "empty" }, "Noch keine Gedanken. Schreib auf, was dir beim Lesen auffällt, einen Satz pro Punkt."),
+    const thoughts = [
+      notes.length ? el("ul", { class: "thoughts" }, notes.map((n) => el("li", null,
+        el("span", { class: "dot", "aria-hidden": "true" }),
+        el("div", null,
+          el("p", { class: "thought-t" }, n.t),
+          el("p", { class: "thought-d" }, numDate(n.d))),
+        el("button", { class: "icon-btn danger", type: "button", "aria-label": "Gedanken löschen", title: "Löschen", onclick: () => removeNote(b, n.id) }, icon("x", 16)))))
+        : el("p", { class: "panel-empty" }, "Noch keine Gedanken. Schreib auf, was dir beim Lesen auffällt, einen Satz pro Punkt."),
       el("form", { class: "inline-form", autocomplete: "off", onsubmit: (ev) => { ev.preventDefault(); addNote(b); } },
         el("div", { class: "field" },
-          el("label", { for: "note-in", class: "vh" }, "Neuer Gedanke"),
-          el("input", { id: "note-in", maxlength: "500", placeholder: "Neuer Gedanke …", enterkeyhint: "done" })),
-        el("button", { class: "btn", type: "submit" }, "Hinzufügen"))));
+          el("input", { id: "note-in", "aria-label": "Neuer Gedanke", maxlength: "500", placeholder: "Neuer Gedanke …", enterkeyhint: "done" })),
+        el("button", { class: "btn", type: "submit" }, "Hinzufügen")),
+    ];
 
     // Zusammenfassung
-    view.append(el("section", { "aria-labelledby": "h-sum" },
-      el("h2", { id: "h-sum" }, "Zusammenfassung"),
-      el("label", { for: "sum-in", class: "vh" }, "Zusammenfassung"),
-      el("textarea", { id: "sum-in", rows: "7", maxlength: "20000", placeholder: "Worum geht es? Was bleibt dir von dem Buch?", value: (sumDraft && sumDraft.id === id) ? sumDraft.text : (e.summary || ""),
+    const summary = [
+      el("textarea", { id: "sum-in", "aria-label": "Zusammenfassung", rows: "7", maxlength: "20000", placeholder: "Worum geht es? Was bleibt dir von dem Buch?", value: (sumDraft && sumDraft.id === id) ? sumDraft.text : (e.summary || ""),
         oninput: (ev) => queueSummary(b, ev.target.value), onblur: (ev) => saveSummary(b, ev.target.value) }),
-      el("p", { class: "saved", id: "sum-state" }, (sumDraft && sumDraft.id === id) ? "Nicht gespeichert" : e.summary ? "Gespeichert" : "")));
+      el("p", { class: "saved", id: "sum-state" }, (sumDraft && sumDraft.id === id) ? "Nicht gespeichert" : e.summary ? "Gespeichert" : ""),
+    ];
+
+    view.append(tabbed("buch", "Lesetagebuch zu diesem Buch", "tabs auto colored", [
+      { key: "seiten", text: "Seiten", color: "var(--c)", stack: true, body: pages },
+      { key: "gedanken", text: "Gedanken", color: "var(--c)", stack: true, count: notes.length, body: thoughts },
+      { key: "zusammenfassung", text: "Zusammenfassung", color: "var(--c)", stack: true, body: summary },
+    ], bookTab, (key) => { bookTab = key; }));
 
     // Fertig
     const atEnd = e.total && e.page >= e.total;
@@ -769,7 +800,7 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
   function render() {
     const id = currentId();
     const viewKey = id || "home";
-    if (viewKey !== lastView) { showAllLog = false; }
+    if (viewKey !== lastView) { showAllLog = false; bookTab = "seiten"; }
     renderPending = false;
     if (id) renderBook(id); else renderHome();
     document.title = id && shelf && shelf.books.find((x) => x.id === id)
