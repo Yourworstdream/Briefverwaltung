@@ -6,48 +6,47 @@
 <title>Lesetagebuch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Roboto:wght@400;500;700&display=swap">
 <style>
-/* Layout: wie „Was lese ich heute?“ – eine ruhige Spalte, Farbe nur am Buch selbst. Liste aller Bücher, dann pro Buch Seiten, Gedanken, Zusammenfassung. */
+/* Material Design 3: Farbrollen (hell/dunkel), Roboto-Typoskala, Formen, 4/8-dp-Raster, 48-dp-Tippflächen.
+   Eigenständig bleiben nur Etikett und Buchrücken: Sie zeigen die Bücher selbst. */
 :root {
-  --paper: #F3F5FA;
-  --card: #FFFFFF;
-  --ink: #141A33;
-  --muted: #5B6382;
-  --line: #DDE2EE;
-  --hover: #E9EDF6;
-  --gilt: #D4A73F;
-  --gilt-text: #F8E9B8;
-  --danger: #C0322B;
-  --focus: #1F56D3;
-  --ok: #096042;
-  --grid: #C8D1E3;
-  --head: #1F56D3;
-  --head-dark: #1846B0;
-  --head-text: #FFFFFF;
-  --band: #EAF0FB;
-  --rowhead: #EDEFF4;
-  --select: #096042;
-  --grey-head: #5B6382;
-  --ok-head: #096042;
+  --primary: #2C58C3; --on-primary: #FFFFFF;
+  --secondary-container: #DCE2F9; --on-secondary-container: #141B2C;
+  --surface: #FAF8FF; --surface-lowest: #FFFFFF; --surface-low: #F4F3FA; --surface-high: #E8E7EF;
+  --on-surface: #1A1B21; --on-surface-variant: #44464F;
+  --outline: #757780; --outline-variant: #C5C6D0;
+  --error: #BA1A1A; --success: #096042;
+  --inverse-surface: #2F3036; --inverse-on-surface: #F1F0F7; --inverse-primary: #B3C5FF;
+  --gilt: #D4A73F; --gilt-text: #F8E9B8;
+  --elev-1: 0 1px 2px rgb(0 0 0 / 0.3), 0 1px 3px 1px rgb(0 0 0 / 0.15);
+  --elev-3: 0 1px 3px rgb(0 0 0 / 0.3), 0 4px 8px 3px rgb(0 0 0 / 0.15);
+  --font: Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Bodoni Moda", "Bodoni 72", Didot, Georgia, serif;
-  --font-ui: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
-    --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
-    --grid: #2E3758; --head: #2B5BD0; --head-dark: #2149AE; --head-text: #FFFFFF; --band: #1A2140; --rowhead: #1B2036; --select: #4CC38A; --grey-head: #46506F; --ok-head: #0F6B4B;
+    --primary: #B3C5FF; --on-primary: #002A77;
+    --secondary-container: #3F4759; --on-secondary-container: #DCE2F9;
+    --surface: #121318; --surface-lowest: #0D0E13; --surface-low: #1A1B21; --surface-high: #292A2F;
+    --on-surface: #E3E1E9; --on-surface-variant: #C5C6D0;
+    --outline: #8F9099; --outline-variant: #44464F;
+    --error: #FFB4AB; --success: #8BD5A8;
+    --inverse-surface: #E3E1E9; --inverse-on-surface: #2F3036; --inverse-primary: #2C58C3;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #0E1222; --card: #161B30; --ink: #E9ECF6; --muted: #98A0C0; --line: #272E4B; --hover: #1E2440;
-  --danger: #FF8A80; --focus: #8FAEFF; --ok: #5FD19B;
-    --grid: #2E3758; --head: #2B5BD0; --head-dark: #2149AE; --head-text: #FFFFFF; --band: #1A2140; --rowhead: #1B2036; --select: #4CC38A; --grey-head: #46506F; --ok-head: #0F6B4B;
+  --primary: #B3C5FF; --on-primary: #002A77;
+  --secondary-container: #3F4759; --on-secondary-container: #DCE2F9;
+  --surface: #121318; --surface-lowest: #0D0E13; --surface-low: #1A1B21; --surface-high: #292A2F;
+  --on-surface: #E3E1E9; --on-surface-variant: #C5C6D0;
+  --outline: #8F9099; --outline-variant: #44464F;
+  --error: #FFB4AB; --success: #8BD5A8;
+  --inverse-surface: #E3E1E9; --inverse-on-surface: #2F3036; --inverse-primary: #2C58C3;
   color-scheme: dark;
 }
 
@@ -55,220 +54,242 @@
 [hidden] { display: none !important; }
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-ui);
-  font-size: 15px;
-  line-height: 1.5;
+  background: var(--surface);
+  color: var(--on-surface);
+  font: 400 16px/24px var(--font);
+  letter-spacing: 0.5px;
   overflow-wrap: break-word;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
-button, input, textarea { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button, input, select, textarea { font: inherit; letter-spacing: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ico { display: inline-block; flex: none; vertical-align: -0.18em; }
 
 .wrap {
   max-width: 760px;
   margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 20px 80px;
+  padding-block: 8px 96px;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 36px;
+  gap: 32px;
 }
-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; min-width: 0; }
 
-.top {
-  display: flex; justify-content: space-between; align-items: baseline;
-  flex-wrap: wrap; gap: 6px 16px;
-  padding-bottom: 14px; border-bottom: 1px solid var(--line);
-}
-.mark { margin: 0; font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: 1.3rem; letter-spacing: -0.01em; }
-.date { margin: 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+/* Obere App-Leiste: Titel groß, Datum daneben */
+.top { display: flex; align-items: center; flex-wrap: wrap; gap: 0 16px; min-height: 64px; }
+.mark { flex: 1 1 auto; margin: 0; font: 400 22px/28px var(--font); letter-spacing: 0; }
+.date { margin: 0; font: 400 14px/20px var(--font); letter-spacing: 0.25px; color: var(--on-surface-variant); }
 
+/* Überschriften der Abschnitte: „Title medium“, normal geschrieben */
 h2, .eyebrow {
-  margin: 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);
+  margin: 0; font: 500 16px/24px var(--font); letter-spacing: 0.15px; color: var(--on-surface);
 }
-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
 
-/* Etikett wie auf dem Buchrücken */
+/* Etikett des Buchs: die Gestaltung des echten Buchrückens, mit Material-Form und -Schatten */
 .label {
   --c: #2747C4;
   position: relative; display: block;
-  border-radius: 6px; padding: 9px;
+  padding: 10px; border-radius: 12px;
   color: var(--gilt-text); text-decoration: none;
   background: linear-gradient(160deg, rgb(0 0 0 / 0), rgb(0 0 0 / 0.2)), var(--c);
-  box-shadow: 0 20px 40px -26px var(--c);
+  box-shadow: var(--elev-1);
 }
-.label-inner {
-  position: relative; border: 1px solid var(--gilt);
-  padding: clamp(18px, 4.5vw, 34px) clamp(56px, 9vw, 90px) clamp(18px, 4.5vw, 30px) clamp(18px, 4.5vw, 36px);
-}
+.label-inner { position: relative; border: 1px solid var(--gilt); }
 .label-inner::before { content: ""; position: absolute; inset: 5px; border: 1px solid var(--gilt); opacity: 0.55; pointer-events: none; }
+.orn { display: flex; align-items: center; gap: 9px; color: var(--gilt); }
+.orn::before, .orn::after { content: ""; height: 1px; width: 44px; background: currentColor; }
+.orn i { width: 7px; height: 7px; border: 1px solid currentColor; transform: rotate(45deg); }
+
+/* Knöpfe: gefüllt (Hauptaktion) und Text (Nebenaktion), 40 dp hoch, ganz gerundet */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 40px; padding: 0 24px;
+  border: 0; border-radius: 20px;
+  background: var(--primary); color: var(--on-primary);
+  font: 500 14px/20px var(--font); letter-spacing: 0.1px;
+  cursor: pointer; text-decoration: none;
+  transition: box-shadow 0.15s, background-color 0.15s;
+}
+.btn:hover { background: color-mix(in srgb, var(--on-primary) 8%, var(--primary)); box-shadow: var(--elev-1); }
+.btn:active { background: color-mix(in srgb, var(--on-primary) 10%, var(--primary)); box-shadow: none; }
+.btn:disabled {
+  background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+  color: color-mix(in srgb, var(--on-surface) 38%, transparent);
+  box-shadow: none; cursor: default;
+}
+.link, .cross, .back {
+  justify-self: start; display: inline-flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 0 12px; margin-left: -12px;
+  border: 0; border-radius: 20px; background: transparent;
+  color: var(--primary); font: 500 14px/20px var(--font); letter-spacing: 0.1px;
+  text-decoration: none; cursor: pointer;
+}
+.link:hover, .cross:hover, .back:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+
+/* Umrandete Textfelder: Beschriftung sitzt auf dem Rahmen, Fokus mit 2-dp-Rahmen in Primärfarbe */
+.field { position: relative; min-width: 0; }
+.field label {
+  position: absolute; left: 12px; top: -8px; z-index: 1;
+  max-width: calc(100% - 24px); padding: 0 4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  background: var(--surface); color: var(--on-surface-variant);
+  font: 400 12px/16px var(--font); letter-spacing: 0.4px;
+  pointer-events: none;
+}
+.field input, .field textarea {
+  display: block; width: 100%; min-width: 0;
+  border: 1px solid var(--outline); border-radius: 4px;
+  background: transparent; color: var(--on-surface);
+  font: 400 16px/24px var(--font); letter-spacing: 0.5px;
+}
+.field input { height: 56px; padding: 0 16px; text-overflow: ellipsis; }
+.field input::placeholder, .field textarea::placeholder { color: var(--on-surface-variant); opacity: 1; }
+.field input:hover, .field textarea:hover { border-color: var(--on-surface); }
+.field input:focus { outline: none; border: 2px solid var(--primary); padding: 0 15px; }
+.field:focus-within label { color: var(--primary); }
+
+/* Tabelle nach Material: ruhige Zeilen mit Trennlinien, Kopf in Variantenfarbe, Rahmen 12 dp gerundet */
+.sheet-wrap {
+  /* relative: auch unsichtbare Beschriftungen bleiben im Scrollbereich und verbreitern die Seite nicht */
+  position: relative;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--outline-variant); border-radius: 12px;
+  background: var(--surface-lowest);
+}
+.sheet {
+  border-collapse: separate; border-spacing: 0; width: 100%;
+  font: 400 14px/20px var(--font); letter-spacing: 0.25px;
+}
+.sheet th, .sheet td {
+  height: 52px; padding: 8px 16px;
+  text-align: left; vertical-align: middle;
+  border-bottom: 1px solid var(--outline-variant);
+  background: var(--surface-lowest); color: var(--on-surface);
+}
+.sheet tbody tr:last-child > * { border-bottom: 0; }
+.sheet thead th { height: 56px; font-weight: 500; letter-spacing: 0.1px; color: var(--on-surface-variant); white-space: nowrap; }
+.sheet .c-name { position: sticky; left: 0; z-index: 1; border-right: 1px solid var(--outline-variant); overflow-wrap: anywhere; }
+.sheet thead .c-name { z-index: 2; }
+.sheet .num { text-align: right; font-variant-numeric: tabular-nums; }
+.sheet td.empty { height: auto; padding: 24px 16px; color: var(--on-surface-variant); }
+/* Epoche als Etikett-Chip in ihrer Farbe */
+.ep {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 32px; padding: 0 12px; border-radius: 8px;
+  background: color-mix(in srgb, var(--c) 14%, var(--surface-lowest));
+  font-weight: 500;
+}
+.ep::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+.sheet td.c-status { white-space: nowrap; }
+.sheet td.c-status.done { color: var(--success); font-weight: 500; }
+/* Linearer Fortschrittsbalken (4 dp) */
+.lp { display: block; width: 100%; min-width: 64px; max-width: 120px; height: 4px; margin-top: 6px; border-radius: 2px; background: var(--secondary-container); overflow: hidden; }
+.lp > span { display: block; width: var(--p); height: 100%; border-radius: 2px; background: var(--c, var(--primary)); }
+/* Symbolknöpfe in Zeilen: 40 dp, rund, ohne Rahmen */
+.cell-btn {
+  display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0;
+  border: 0; border-radius: 20px; background: transparent; color: var(--on-surface-variant);
+  vertical-align: middle; cursor: pointer;
+}
+.cell-btn + .cell-btn { margin-left: 4px; }
+.cell-btn:hover { background: color-mix(in srgb, var(--on-surface-variant) 8%, transparent); }
+.cell-btn.danger { color: var(--error); }
+.cell-btn.danger:hover { background: color-mix(in srgb, var(--error) 8%, transparent); }
+.cell-btn.ok { background: var(--primary); color: var(--on-primary); }
+.cell-btn.ok:hover { background: color-mix(in srgb, var(--on-primary) 8%, var(--primary)); }
+.cell-btn.txt { width: auto; padding: 0 12px; font: 500 14px/20px var(--font); letter-spacing: 0.1px; }
+.sheet.wide { min-width: 480px; }
+.sheet .c-name { min-width: 170px; max-width: 250px; }
+.sheet td.date { white-space: nowrap; color: var(--on-surface-variant); }
+.sheet td.plus { font-weight: 500; color: var(--success); }
+.sheet td.text { overflow-wrap: anywhere; white-space: pre-wrap; }
+.sheet td.del { width: 1%; padding: 0 8px; }
+.sheet tfoot th, .sheet tfoot td { font-weight: 500; border-top: 1px solid var(--outline-variant); border-bottom: 0; }
+.sheet tbody tr.click { cursor: pointer; }
+.sheet tbody tr.click:hover > * { background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-lowest)); }
+.sheet a.cell-link { color: inherit; text-decoration: none; font-weight: 500; }
+.sheet a.cell-link:hover { text-decoration: underline; }
+
+/* Meldung unten („Snackbar“) */
+.toast {
+  position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+  display: flex; align-items: center; gap: 4px;
+  width: max-content; max-width: min(600px, calc(100% - 32px)); min-height: 48px;
+  padding: 4px 8px 4px 16px; border-radius: 4px;
+  background: var(--inverse-surface); color: var(--inverse-on-surface);
+  font: 400 14px/20px var(--font); letter-spacing: 0.25px;
+  box-shadow: var(--elev-3);
+  transition: opacity 0.15s, transform 0.15s;
+  z-index: 20;
+}
+.toast span { padding: 10px 0; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.has-act.show { pointer-events: auto; }
+.toast:not(.has-act) { padding-right: 16px; }
+.toast button {
+  flex: none; min-height: 40px; padding: 0 12px; border: 0; border-radius: 20px;
+  background: transparent; color: var(--inverse-primary);
+  font: 500 14px/20px var(--font); letter-spacing: 0.1px; cursor: pointer;
+}
+.toast button:hover { background: color-mix(in srgb, var(--inverse-primary) 8%, transparent); }
+
+main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; min-width: 0; }
+section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-width: 0; }
+
+/* Etikett wie auf dem Buchrücken */
+.label-inner { padding: clamp(18px, 4.5vw, 34px) clamp(56px, 9vw, 90px) clamp(18px, 4.5vw, 30px) clamp(18px, 4.5vw, 36px); }
 .ribbon {
   position: absolute; top: -10px; right: clamp(22px, 5vw, 40px);
   width: 15px; height: 64px; background: var(--gilt);
   clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
 }
-.l-author { margin: 0 0 4px; font-family: var(--font-display); font-weight: 600; font-size: 0.86rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.l-author { margin: 0 0 4px; font-family: var(--font-display); font-weight: 600; font-size: 0.86rem; line-height: 1.3; letter-spacing: 0.18em; text-transform: uppercase; }
 .l-title { margin: 0; font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: clamp(1.9rem, 6.5vw, 3.1rem); line-height: 1.04; text-wrap: balance; overflow-wrap: anywhere; }
 .label.small .l-title { font-size: clamp(1.5rem, 5vw, 2.1rem); }
-.orn { display: flex; align-items: center; gap: 9px; margin: 14px 0 10px; color: var(--gilt); }
-.orn::before, .orn::after { content: ""; height: 1px; width: 40px; background: currentColor; }
-.orn i { width: 7px; height: 7px; border: 1px solid currentColor; transform: rotate(45deg); }
-.l-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+.orn { margin: 14px 0 10px; }
+.l-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; font: 500 12px/16px var(--font); letter-spacing: 0.14em; text-transform: uppercase; }
 .l-meta .sep { opacity: 0.6; }
-.label.small .l-meta { margin-top: 10px; letter-spacing: 0.06em; text-transform: none; font-size: 0.86rem; }
-a.label { transition: transform 0.15s; }
-a.label:hover { transform: translateY(-2px); }
+.label.small .l-meta { margin-top: 10px; font: 500 14px/20px var(--font); letter-spacing: 0.1px; text-transform: none; }
+a.label { transition: box-shadow 0.15s; }
+a.label:hover { box-shadow: var(--elev-3); }
 
-/* Bücherlisten */
-/* Listen wie formatierte Excel-Tabellen: farbige Kopfzeile, Gitter, Zeilennummern, Streifen, Datenbalken */
-.ico { display: inline-block; flex: none; vertical-align: -0.18em; }
-/* relative: auch unsichtbare Beschriftungen bleiben im Scrollbereich und verbreitern die Seite nicht */
-.sheet-wrap { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--grid); background: var(--card); }
-.sheet {
-  border-collapse: separate; border-spacing: 0; width: 100%;
-  font-size: 0.9rem; line-height: 1.35;
-}
-.sheet.wide { min-width: 520px; }
-.sheet tbody tr { --cell: var(--card); }
-.sheet tbody tr:nth-child(even) { --cell: var(--band); }
-.sheet th, .sheet td {
-  padding: 7px 10px; text-align: left; vertical-align: middle;
-  border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid);
-  background-color: var(--cell, var(--card));
-}
-.sheet tr > :last-child { border-right: 0; }
-.sheet tbody tr:last-child > * { border-bottom: 0; }
-.sheet thead th {
-  background-color: var(--head); color: var(--head-text); font-weight: 700; white-space: nowrap;
-  border-right-color: rgb(255 255 255 / 0.22); border-bottom: 0;
-}
-.sheet .rh {
-  position: sticky; left: 0; z-index: 1;
-  width: 40px; min-width: 40px; padding-inline: 4px; text-align: center;
-  font-weight: 500; font-size: 0.78rem; color: var(--muted); background-color: var(--rowhead);
-  font-variant-numeric: tabular-nums;
-}
-.sheet thead .rh { background-color: var(--head-dark); color: var(--head-text); z-index: 2; }
-.sheet .c-name { position: sticky; left: 40px; z-index: 1; min-width: 170px; max-width: 250px; overflow-wrap: anywhere; }
-.sheet thead .c-name { z-index: 2; }
-.sheet .num { text-align: right; font-variant-numeric: tabular-nums; }
-.sheet td.date { white-space: nowrap; color: var(--muted); }
-.sheet td.c-epoch { background-color: color-mix(in srgb, var(--c) 24%, var(--cell)); font-weight: 600; }
-.sheet td.c-status { white-space: nowrap; min-width: 120px; }
-.sheet td.c-status.done { background-color: color-mix(in srgb, var(--ok) 20%, var(--cell)); color: var(--ok); font-weight: 700; }
-.sheet td.c-status.databar {
-  background-image: linear-gradient(90deg, color-mix(in srgb, var(--c) 42%, transparent) var(--p), transparent var(--p));
-}
-.sheet td.plus { font-weight: 700; color: var(--ok); }
-.sheet td.text { overflow-wrap: anywhere; white-space: pre-wrap; }
-.sheet td.del { width: 1%; padding: 4px 6px; }
-.sheet tfoot th, .sheet tfoot td {
-  font-weight: 700; background-color: var(--card); border-top: 3px double var(--grid); border-bottom: 0;
-}
-.sheet tbody tr.click { cursor: pointer; }
-.sheet tbody tr.click:hover > * { background-color: color-mix(in srgb, var(--select) 10%, var(--cell)); }
-.sheet a.cell-link { color: inherit; text-decoration: none; font-weight: 600; }
-.sheet a.cell-link:hover { text-decoration: underline; }
-.sheet.grp-neu thead th { background-color: var(--grey-head); }
-.sheet.grp-fertig thead th { background-color: var(--ok-head); }
-.sheet.colored thead th { background-color: var(--c); }
-.sheet.colored thead .rh { background-color: color-mix(in srgb, var(--c) 78%, black); }
-.sheet.colored tbody tr:nth-child(even) { --cell: color-mix(in srgb, var(--c) 9%, var(--card)); }
-.cell-btn {
-  display: inline-grid; place-items: center; min-width: 30px; height: 28px; padding: 0 8px;
-  border: 1px solid var(--grid); border-radius: 3px; background: var(--card); color: var(--danger);
-  font-size: 0.85rem; cursor: pointer;
-}
-.cell-btn:hover { background: var(--hover); }
-.empty { margin: 0; padding: 14px 4px; color: var(--muted); }
-.cross {
-  justify-self: start; display: inline-flex; align-items: center; min-height: 40px;
-  font-weight: 600; font-size: 0.92rem; color: var(--ink);
-  text-decoration: underline; text-decoration-color: var(--gilt); text-decoration-thickness: 2px; text-underline-offset: 4px;
-}
+.empty { margin: 0; padding: 8px 0; font: 400 14px/20px var(--font); letter-spacing: 0.25px; color: var(--on-surface-variant); }
 
 /* Einzelnes Buch */
-.back {
-  justify-self: start; display: inline-flex; align-items: center; gap: 4px;
-  color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.88rem;
-  padding: 6px 10px 6px 0; min-height: 40px;
-}
-.back:hover { color: var(--ink); }
-.detail-head { display: grid; gap: 14px; }
+.back { padding-right: 16px; }
+.detail-head { display: grid; gap: 16px; }
 
 .prog { display: grid; gap: 8px; }
 .prog-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-.big { margin: 0; font-size: 0.95rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.big b { font-family: var(--font-display); font-size: 2.3rem; font-weight: 600; color: var(--ink); line-height: 1; margin-right: 4px; }
-.pct { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
-.bar { height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
-.bar span { display: block; height: 100%; background: var(--c); border-radius: inherit; transition: width 0.4s ease; }
-.stats { margin: 0; font-size: 0.84rem; color: var(--muted); }
+.big { margin: 0; font: 400 14px/20px var(--font); letter-spacing: 0.25px; color: var(--on-surface-variant); font-variant-numeric: tabular-nums; }
+.big b { margin-right: 4px; font: 400 36px/44px var(--font); letter-spacing: 0; color: var(--on-surface); }
+.pct { margin: 0; font: 500 14px/20px var(--font); letter-spacing: 0.1px; font-variant-numeric: tabular-nums; }
+.bar { height: 4px; border-radius: 2px; background: var(--secondary-container); overflow: hidden; }
+.bar span { display: block; height: 100%; border-radius: 2px; background: var(--c); transition: width 0.4s ease; }
+.stats { margin: 0; font: 400 14px/20px var(--font); letter-spacing: 0.25px; color: var(--on-surface-variant); }
 
-.inline-form { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
-.field { display: grid; gap: 5px; flex: 1 1 160px; min-width: 0; }
-.field label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
-input, textarea {
-  width: 100%; min-width: 0;
-  border: 1px solid var(--line); background: var(--card); border-radius: 8px;
-  padding: 10px 12px; font-size: 1rem;
-}
-input:focus, textarea:focus { border-color: var(--focus); outline: 2px solid var(--focus); outline-offset: 1px; box-shadow: 0 0 0 3px rgb(31 86 211 / 0.18); }
-textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
-.field.narrow { flex: 0 1 150px; }
+.inline-form { display: flex; flex-wrap: wrap; align-items: center; gap: 24px 8px; }
+.inline-form .field { flex: 1 1 160px; }
+.inline-form .field.narrow { flex: 0 1 160px; }
+.field textarea { min-height: 168px; padding: 16px; resize: vertical; }
+.field textarea:focus { outline: none; border: 2px solid var(--primary); padding: 15px; }
+.saved { margin: -12px 16px 0; min-height: 16px; font: 400 12px/16px var(--font); letter-spacing: 0.4px; color: var(--on-surface-variant); }
 
-.btn {
-  border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
-  border-radius: 999px; padding: 10px 18px; font-weight: 600; font-size: 0.92rem; cursor: pointer;
-  transition: transform 0.12s;
-}
-.btn:hover { transform: translateY(-1px); }
-.btn.ghost { background: transparent; color: var(--ink); }
-.btn.go { animation: nudge 1.2s ease-in-out 2; }
-@keyframes nudge { 50% { transform: scale(1.05); } }
-.link {
-  background: none; border: 0; padding: 6px 8px; border-radius: 6px; cursor: pointer;
-  font-size: 0.85rem; font-weight: 500; color: var(--muted);
-}
-.link:hover { color: var(--ink); background: var(--hover); }
-
-.log-more { justify-self: start; }
-
-.saved { margin: 0; font-size: 0.8rem; color: var(--muted); min-height: 1.2em; }
-.finish { padding: 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.finish { padding: 16px; border: 1px solid var(--outline-variant); border-radius: 12px; background: var(--surface-lowest); }
 .finish p { margin: 0; }
-.hint { font-size: 0.86rem; color: var(--muted); }
-.done-line { font-weight: 700; color: var(--ok); }
+.hint { font: 400 14px/20px var(--font); letter-spacing: 0.25px; color: var(--on-surface-variant); }
+.done-line { display: flex; align-items: center; gap: 8px; color: var(--success); font: 500 16px/24px var(--font); letter-spacing: 0.15px; }
 
-.toast {
-  position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
-  display: flex; align-items: center; gap: 12px;
-  background: var(--ink); color: var(--paper);
-  padding: 9px 10px 9px 18px; border-radius: 999px; font-size: 0.88rem;
-  max-width: calc(100% - 32px); width: max-content;
-  transition: opacity 0.2s, transform 0.2s; z-index: 20;
-}
-.toast.show { opacity: 1; transform: translate(-50%, 0); }
-.toast.has-act.show { pointer-events: auto; }
-.toast button { background: none; border: 0; color: var(--gilt); font-weight: 700; cursor: pointer; padding: 4px 8px; }
-.toast:not(.has-act) { padding-right: 18px; }
-
-/* Schmale Handys: Tabelle enger setzen, damit mehr Spalten ohne Wischen passen */
+/* Schmale Handys: Bücherlisten ohne seitliches Wischen */
 @media (max-width: 480px) {
-  .sheet { font-size: 0.84rem; }
   .sheet.wide { min-width: 0; }
-  .sheet th, .sheet td { padding: 6px 7px; }
-  .sheet .rh { width: 30px; min-width: 30px; padding-inline: 2px; }
-  .sheet .c-name { left: 30px; min-width: 128px; }
-  .sheet.wide .c-name { min-width: 110px; }
+  .sheet th, .sheet td { padding: 8px; }
+  .sheet .c-name { min-width: 112px; }
   .sheet.wide .c-ep, .sheet.wide td.c-epoch { display: none; }
-  .sheet td.c-status { min-width: 0; }
-  .cell-btn { min-width: 36px; height: 36px; padding: 0 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -482,27 +503,26 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
 
   function progressCell(e) {
     if (e.finished) return el("td", { class: "c-status done" }, icon("check", 14), " " + numDate(e.finished));
-    if (e.page && e.total) return el("td", { class: "c-status databar", style: { "--p": pct(e) + "%" } }, `${e.page}/${e.total} · ${pct(e)} %`);
+    if (e.page && e.total) return el("td", { class: "c-status", style: { "--p": pct(e) + "%" } }, `${e.page}/${e.total} · ${pct(e)} %`,
+      el("span", { class: "lp", "aria-hidden": "true" }, el("span")));
     if (e.page) return el("td", { class: "c-status" }, `S. ${e.page}`);
     return el("td", { class: "c-status" }, "");
   }
 
-  function bookTable(list, group) {
+  function bookTable(list) {
     const open = (b) => { location.hash = "#buch-" + encodeURIComponent(b.id); };
-    return el("div", { class: "sheet-wrap" }, el("table", { class: "sheet wide " + group },
+    return el("div", { class: "sheet-wrap" }, el("table", { class: "sheet wide" },
       el("thead", null, el("tr", null,
-        el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
         el("th", { class: "c-name", scope: "col" }, "Buch"),
         el("th", { class: "c-ep", scope: "col" }, "Epoche"),
         el("th", { scope: "col" }, "Fortschritt"),
         el("th", { class: "num", scope: "col" }, "Gedanken"))),
-      el("tbody", null, list.map((b, i) => {
+      el("tbody", null, list.map((b) => {
         const e = entry(b.id);
         const n = (e.notes || []).length;
         return el("tr", { class: "click", style: { "--c": color(b.epoch) }, onclick: (ev) => { if (ev.target.tagName !== "A") open(b); } },
-          el("th", { class: "rh", scope: "row" }, String(i + 1)),
           el("td", { class: "c-name" }, el("a", { class: "cell-link", href: "#buch-" + encodeURIComponent(b.id) }, b.name)),
-          el("td", { class: "c-epoch" }, b.epoch || ""),
+          el("td", { class: "c-epoch" }, b.epoch ? el("span", { class: "ep" }, b.epoch) : ""),
           progressCell(e),
           el("td", { class: "num" }, n ? String(n) : ""));
       }))));
@@ -533,13 +553,13 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     const done = books.filter(isDone)
       .sort((a, b) => String(entry(b.id).finished).localeCompare(String(entry(a.id).finished)));
 
-    const group = (title, list, emptyText, cls) => el("section", null,
+    const group = (title, list, emptyText) => el("section", null,
       el("h2", null, `${title} · ${list.length}`),
-      list.length ? bookTable(list, cls) : el("p", { class: "empty" }, emptyText));
+      list.length ? bookTable(list) : el("p", { class: "empty" }, emptyText));
     view.append(
-      group("Am Lesen", reading, "Noch kein Buch angefangen. Tipp auf ein Buch, um Seiten oder Gedanken einzutragen.", "grp-lesen"),
-      group("Noch nicht angefangen", fresh, "Alle Bücher sind angefangen oder gelesen.", "grp-neu"),
-      group("Gelesen", done, "Noch kein Buch fertig gelesen.", "grp-fertig"),
+      group("Am Lesen", reading, "Noch kein Buch angefangen. Tipp auf ein Buch, um Seiten oder Gedanken einzutragen."),
+      group("Noch nicht angefangen", fresh, "Alle Bücher sind angefangen oder gelesen."),
+      group("Gelesen", done, "Noch kein Buch fertig gelesen."),
       BRIDGE ? null : el("a", { class: "cross", href: "index.html" }, "Zum Regal: Was lese ich heute?"));
   }
 
@@ -593,24 +613,21 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
             onchange: (ev) => setTotal(b, ev.target.value),
             // Enter speichert nur die Seitenzahl, ohne das Seiten-Formular abzuschicken.
             onkeydown: (ev) => { if (ev.key === "Enter") { ev.preventDefault(); ev.target.blur(); } } }))),
-      shownLog.length ? el("div", { class: "sheet-wrap" }, el("table", { class: "sheet colored", "aria-label": "Verlauf der gelesenen Seiten" },
+      shownLog.length ? el("div", { class: "sheet-wrap" }, el("table", { class: "sheet", "aria-label": "Verlauf der gelesenen Seiten" },
         el("thead", null, el("tr", null,
-          el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
           el("th", { scope: "col" }, "Datum"),
           el("th", { class: "num", scope: "col" }, "Von"),
           el("th", { class: "num", scope: "col" }, "Bis"),
           el("th", { class: "num", scope: "col" }, "Seiten"))),
-        el("tbody", null, shownLog.map((x, i) => {
+        el("tbody", null, shownLog.map((x) => {
           const diff = (x.to || 0) - (x.from || 0);
           return el("tr", null,
-            el("th", { class: "rh", scope: "row" }, String(first + i + 1)),
             el("td", { class: "date" }, numDate(x.d)),
             el("td", { class: "num" }, String(x.from || 0)),
             el("td", { class: "num" }, String(x.to)),
             el("td", { class: "num" + (diff > 0 ? " plus" : "") }, diff > 0 ? "+" + diff : String(diff)));
         })),
         el("tfoot", null, el("tr", null,
-          el("th", { class: "rh", scope: "row" }, "Σ"),
           el("td", { colspan: "3" }, `Summe (${plural(days, "Lesetag", "Lesetage")})`),
           el("td", { class: "num" }, String(gained)))))) : null,
       log.length > 5 ? el("button", { class: "link log-more", type: "button", onclick: () => { showAllLog = !showAllLog; render(); } },
@@ -620,41 +637,39 @@ textarea { resize: vertical; min-height: 140px; line-height: 1.55; }
     const notes = e.notes || [];
     view.append(el("section", { "aria-labelledby": "h-notes" },
       el("h2", { id: "h-notes" }, "Gedanken"),
-      notes.length ? el("div", { class: "sheet-wrap" }, el("table", { class: "sheet colored", "aria-label": "Gedanken" },
+      notes.length ? el("div", { class: "sheet-wrap" }, el("table", { class: "sheet", "aria-label": "Gedanken" },
         el("thead", null, el("tr", null,
-          el("th", { class: "rh", scope: "col" }, el("span", { class: "vh" }, "Nr.")),
           el("th", { scope: "col" }, "Datum"),
           el("th", { scope: "col" }, "Gedanke"),
           el("th", { scope: "col" }, el("span", { class: "vh" }, "Löschen")))),
-        el("tbody", null, notes.map((n, i) => el("tr", null,
-          el("th", { class: "rh", scope: "row" }, String(i + 1)),
+        el("tbody", null, notes.map((n) => el("tr", null,
           el("td", { class: "date" }, numDate(n.d)),
           el("td", { class: "text" }, n.t),
           el("td", { class: "del" }, el("button", { class: "cell-btn", type: "button", "aria-label": "Gedanken löschen", title: "Löschen", onclick: () => removeNote(b, n.id) }, icon("x", 15))))))))
         : el("p", { class: "empty" }, "Noch keine Gedanken. Schreib auf, was dir beim Lesen auffällt, einen Satz pro Punkt."),
       el("form", { class: "inline-form", autocomplete: "off", onsubmit: (ev) => { ev.preventDefault(); addNote(b); } },
         el("div", { class: "field" },
-          el("label", { for: "note-in", class: "vh" }, "Neuer Gedanke"),
-          el("input", { id: "note-in", maxlength: "500", placeholder: "Neuer Gedanke …", enterkeyhint: "done" })),
+          el("label", { for: "note-in" }, "Neuer Gedanke"),
+          el("input", { id: "note-in", maxlength: "500", placeholder: "Was fällt dir auf?", enterkeyhint: "done" })),
         el("button", { class: "btn", type: "submit" }, "Hinzufügen"))));
 
     // Zusammenfassung
     view.append(el("section", { "aria-labelledby": "h-sum" },
       el("h2", { id: "h-sum" }, "Zusammenfassung"),
-      el("label", { for: "sum-in", class: "vh" }, "Zusammenfassung"),
-      el("textarea", { id: "sum-in", rows: "7", maxlength: "20000", placeholder: "Worum geht es? Was bleibt dir von dem Buch?", value: (sumDraft && sumDraft.id === id) ? sumDraft.text : (e.summary || ""),
-        oninput: (ev) => queueSummary(b, ev.target.value), onblur: (ev) => saveSummary(b, ev.target.value) }),
+      el("div", { class: "field" },
+        el("label", { for: "sum-in" }, "Zusammenfassung"),
+        el("textarea", { id: "sum-in", rows: "7", maxlength: "20000", placeholder: "Worum geht es? Was bleibt dir von dem Buch?", value: (sumDraft && sumDraft.id === id) ? sumDraft.text : (e.summary || ""),
+          oninput: (ev) => queueSummary(b, ev.target.value), onblur: (ev) => saveSummary(b, ev.target.value) })),
       el("p", { class: "saved", id: "sum-state" }, (sumDraft && sumDraft.id === id) ? "Nicht gespeichert" : e.summary ? "Gespeichert" : "")));
 
     // Fertig
-    const atEnd = e.total && e.page >= e.total;
     view.append(e.finished
       ? el("section", { class: "finish" },
           el("p", { class: "done-line" }, icon("check", 16), " Gelesen am " + longDate(e.finished)),
           el("p", { class: "hint" }, "„Was lese ich heute?“ schlägt dieses Buch nicht mehr vor. Im Verzeichnis findest du es weiterhin."),
           el("button", { class: "link", type: "button", style: { "justify-self": "start" }, onclick: () => setFinished(b, false) }, "Doch noch nicht fertig"))
       : el("section", { class: "finish" },
-          el("button", { class: "btn" + (atEnd ? " go" : ""), type: "button", style: { "justify-self": "start" }, onclick: () => setFinished(b, true) }, "Fertig gelesen"),
+          el("button", { class: "btn", type: "button", style: { "justify-self": "start" }, onclick: () => setFinished(b, true) }, "Fertig gelesen"),
           el("p", { class: "hint" }, `Danach schlägt „Was lese ich heute?“ „${title}“ nicht mehr vor. Im Verzeichnis bleibt es.`)));
   }
 
